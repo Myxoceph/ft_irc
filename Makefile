@@ -9,7 +9,7 @@ SRCS_DIR		=	./srcs/
 OBJS_DIR		=	./objs/
 INCLUDES_DIR	=	./inc/
 
-SRCS 			=	$(SRCS_DIR)
+SRCS 			=	$(SRCS_DIR)test.cpp
 
 OBJS			=	$(patsubst $(SRCS_DIR)%.cpp, $(OBJS_DIR)%.o, $(SRCS))
 
@@ -24,7 +24,7 @@ all				:	$(NAME)
 
 $(NAME)			:	$(OBJS)
 					@$(CC) $(CFLAGS) $^ -o $(NAME)
-					@echo "\n\e[1m$(COLOR_YELLOW)$(NAME)	$(COLOR_GREEN)[is ready!]\e[0m\n$(COLOR_END)"
+					@echo "\n\e[1m$(COLOR_YELLOW)$(NAME)		$(COLOR_GREEN)[is ready!]\e[0m\n$(COLOR_END)"
 
 $(OBJS_DIR)%.o	:	$(SRCS_DIR)%.cpp
 					@mkdir -p $(@D)
@@ -37,7 +37,7 @@ clean			:
 
 fclean			:	clean
 					@$(RM) $(NAME)
-					@echo "\e[1m$(COLOR_YELLOW)$(NAME)	$(COLOR_RED)[is deleted!]\e[0m$(COLOR_END)"
+					@echo "\e[1m$(COLOR_YELLOW)$(NAME)		$(COLOR_RED)[is deleted!]\e[0m$(COLOR_END)"
 
 re				:	fclean all
 
