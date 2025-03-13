@@ -141,4 +141,27 @@ void Server::initServer(const std::string& port)
 	server_pollfd.fd = server_fd;
 	server_pollfd.events = POLLIN;
 	fds.push_back(server_pollfd);
+
+	// initCmds();
 }
+
+// void Server::initCmds()
+// {
+// 	usrCmds["PASS"];
+// 	usrCmds["NICK"];
+// 	usrCmds["USER"];
+// 	usrCmds["CREATE"];
+// 	usrCmds["JOIN"];
+// 	usrCmds["QUIT"];
+
+// 	chCmds["DELETE"];
+// 	chCmds["LEAVE"];
+// 	chCmds["ADDOP"];
+// 	chCmds["KICK"];
+// 	chCmds["LSTMEMBERS"];
+
+// 	cmds["PRIVMSG"];
+// 	cmds["PING"];
+// 	cmds["LIST"];
+// 	cmds["HELP"];
+// }
