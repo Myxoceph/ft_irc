@@ -16,6 +16,26 @@ Server::~Server()
 
 }
 
+std::string disableEscapeChars(const char* input) {
+	std::string output;
+	for (std::size_t i = 0; input[i] != '\0'; ++i) {
+		switch (input[i]) {
+			case '\\': output += "\\\\"; break;
+			case '\n': output += "\\n"; break;
+			case '\r': output += "\\r"; break;
+			case '\t': output += "\\t"; break;
+			case '\a': output += "\\a"; break;
+			case '\b': output += "\\b"; break;
+			case '\f': output += "\\f"; break;
+			case '\v': output += "\\v"; break;
+			case '"': output += "\\\""; break;
+			default: output += input[i]; break;
+		}
+	}
+	return output;
+}
+
+
 void Server::run()
 {
 	while (true)
@@ -62,7 +82,9 @@ void Server::run()
 					else
 					{
 						buffer[bytes_read] = '\0';
-						std::cout << "Received from " << fds[i].fd << ": " << buffer;
+						std::string newBuffer = disableEscapeChars(buffer);
+						std::cout << "Received from " << fds[i].fd << ": " << newBuffer;
+						newBuffer.clear();
 						std::string message = "Client " + std::string(buffer);
 						for (size_t j = 0; j < fds.size(); ++j)
 						{
