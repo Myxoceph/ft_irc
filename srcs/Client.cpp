@@ -87,3 +87,18 @@ bool Client::getIsop() const
 {
 	return (this->isop);
 }
+
+std::string& Client::getBuffer()
+{
+	return buffer;
+}
+
+void Client::appendToBuffer(const std::string& data)
+{
+	buffer += data;
+}
+
+void Client::clearBuffer()
+{
+	buffer.clear();
+}

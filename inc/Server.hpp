@@ -5,6 +5,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <unistd.h>
+#include <fcntl.h>
 #include <cstring>
 #include <cerrno>
 #include <iostream>
@@ -15,6 +16,7 @@
 #include "Channel.hpp"
 #include <cstdlib>
 #include <cctype>
+#include <sstream>
 
 #define GREEN "\033[1;32m"
 #define YELLOW "\033[1;33m"
@@ -24,14 +26,19 @@
 #define RED "\033[1;31m"
 #define RESET "\033[0m"
 
+class Client;
+
 class Server
 {
 	private:
 			int							server_fd;
 			std::string					pwd;
 			std::vector<struct pollfd>	fds;
+			std::map<int, Client>		clients;
 			bool checkPort(const std::string& port);
 			void initServer(const std::string& port);
+			void handleClientMessage(Client& client);
+			void handleCommand(Client& client, const std::string& line);
 			// void initCmds();
 
 			// typedef void (Server::*UsrCmds)(Client*, const std::vector<std::string>&);

@@ -15,6 +15,7 @@ class Client
 			std::string	hostname;
 			std::string	realname;
 			std::string	servername;
+			std::string	buffer;
 			bool 		isauth;
 			bool		isop;
 	public:
@@ -28,6 +29,10 @@ class Client
 			std::string	getServername() const;
 			bool		getIsauth() const;
 			bool		getIsop() const;
+			std::string	&getBuffer();
+
+			void appendToBuffer(const std::string& buffer);
+			void clearBuffer();
 
 			void		setNickname(const std::string& nickname);
 			void		setUsername(const std::string& username);
