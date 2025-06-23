@@ -28,6 +28,8 @@
 
 class Client;
 
+class Channel;
+
 class Server
 {
 	private:
@@ -35,6 +37,7 @@ class Server
 			std::string					pwd;
 			std::vector<struct pollfd>	fds;
 			std::map<int, Client>		clients;
+			std::map<std::string, Channel> channels;
 			bool checkPort(const std::string& port);
 			void initServer(const std::string& port);
 			void handleClientMessage(Client& client);
@@ -54,6 +57,17 @@ class Server
 			~Server();
 			void run();
 			void send_message(int client_fd, const std::string& message);
+
+			struct PollFdMatch
+			{
+				int fdToRemove;
+				PollFdMatch(int fd) : fdToRemove(fd) {}
+			
+				bool operator()(const struct pollfd& pfd) const
+				{
+					return pfd.fd == fdToRemove;
+				}
+			};
 };
 
 #endif
