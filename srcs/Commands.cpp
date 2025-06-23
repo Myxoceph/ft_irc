@@ -1,4 +1,4 @@
-#include "commands.hpp"
+#include "Commands.hpp"
 #include "Parser.hpp"
 #include <iostream>
 
@@ -6,7 +6,7 @@ Commands::Commands(std::map<int, Client>& c, std::map<std::string, Channel>& ch)
 	: clients(c), channels(ch) {}
 
 void Commands::executeCommand(const std::string& raw, Client& client) {
-	parseInfo info = parse(raw);
+	parseInfo info = Parser::parse(raw);
 	std::string cmd = info.command;
 
 	if (cmd == "JOIN")
@@ -32,7 +32,7 @@ void Commands::handleJoin(const std::string& channelName, Client& client) {
 }
 
 void Commands::handlePrivmsg(const std::string& message, Client& sender) {
-	reciveMessage info = privateMessage(message);
+	reciveMessage info = Parser::privateMessage(message);
 
 	for (std::map<int, Client>::iterator it = clients.begin(); it != clients.end(); ++it) {
 		if (it->second.getNickname() == info.target) {
@@ -46,7 +46,7 @@ void Commands::handlePrivmsg(const std::string& message, Client& sender) {
 }
 
 void Commands::handleUserCommand(const std::string& msg, Client& client) {
-	userInfo info = userParse(msg);
+	userInfo info = Parser::userParse(msg);
 	client.setUsername(info.userName);
 	client.setRealname(info.realName);
 }
@@ -56,7 +56,7 @@ void Commands::handleNickCommand(const std::string& nick, Client& client) {
 }
 
 void Commands::handleModeCommand(const std::string& msg, Client& client) {
-	modeInfo info = modeParse(msg);
+	modeInfo info = Parser::modeParse(msg);
 	std::cout << "Mode change on channel: " << info.channel
 	          << " -> " << (info.status ? "+" : "-") << info.key << std::endl;
 }
