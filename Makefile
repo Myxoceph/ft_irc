@@ -9,7 +9,7 @@ SRCS_DIR		=	./srcs/
 OBJS_DIR		=	./objs/
 INCLUDES_DIR	=	./inc/
 
-SRCS 			=	$(SRCS_DIR)main.cpp $(SRCS_DIR)Channel.cpp $(SRCS_DIR)Client.cpp $(SRCS_DIR)Server.cpp
+SRCS 			=	$(SRCS_DIR)main.cpp $(SRCS_DIR)Channel.cpp $(SRCS_DIR)Client.cpp $(SRCS_DIR)Server.cpp $(SRCS_DIR)Commands.cpp $(SRCS_DIR)Parser.cpp
 
 OBJS			=	$(patsubst $(SRCS_DIR)%.cpp, $(OBJS_DIR)%.o, $(SRCS))
 

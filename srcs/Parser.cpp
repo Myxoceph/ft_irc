@@ -1,3 +1,4 @@
+#include "Parser.hpp"
 #include <iostream>
 #include <string>
 #include <vector>
@@ -32,12 +33,7 @@ std::string trim(const std::string& str) {
     return str.substr(start, end - start + 1);
 }
 
-struct reciveMessage {
-    std::string target;
-    std::string message;
-};
-
-reciveMessage privateMessage(std::string message) {
+reciveMessage Parser::privateMessage(std::string message) {
     reciveMessage info;
     std::vector<std::string> words = split(message, " ");
     info.target = words[1];
@@ -54,13 +50,7 @@ reciveMessage privateMessage(std::string message) {
     return info;
 }
 
-struct parseInfo {
-    std::string command;
-    std::string function;
-    std::string value;
-};
-
-parseInfo parse(std::string message) {
+parseInfo Parser::parse(std::string message) {
     parseInfo info;
 
     if (message.find(" ") == std::string::npos) {
@@ -85,12 +75,7 @@ parseInfo parse(std::string message) {
     return info;
 }
 
-struct userInfo {
-    std::string userName;
-    std::string realName;
-};
-
-userInfo userParse(std::string message) {
+userInfo Parser::userParse(std::string message) {
     userInfo user;
     std::vector<std::string> words = split(message, " ");
     user.userName = words[1];
@@ -98,14 +83,7 @@ userInfo userParse(std::string message) {
     return user;
 }
 
-struct modeInfo {
-    std::string channel;
-    bool status;
-    char key;
-    std::string parameters;
-};
-
-modeInfo modeParse(std::string message) {
+modeInfo Parser::modeParse(std::string message) {
     modeInfo info;
     std::vector<std::string> words = split(message, " ");
     info.channel = trim(words[1]);

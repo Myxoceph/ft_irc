@@ -14,6 +14,8 @@
 #include <map>
 #include "Client.hpp"
 #include "Channel.hpp"
+#include "Parser.hpp"
+#include "Commands.hpp"
 #include <cstdlib>
 #include <cctype>
 #include <sstream>
@@ -29,6 +31,8 @@
 class Client;
 
 class Channel;
+
+class Commands;
 
 class Server
 {

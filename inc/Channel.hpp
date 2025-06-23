@@ -15,6 +15,7 @@ class Channel
 			std::set<std::string>	ops;
 			std::set<std::string>	blacklists;
 	public:
+			Channel();
 			Channel(const std::string& name);
 			~Channel();
 			void setName(const std::string& name);

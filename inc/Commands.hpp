@@ -6,6 +6,9 @@
 #include <map>
 #include <string>
 
+class Client;
+class Channel;
+
 class Commands {
 private:
 	std::map<int, Client>& clients;

@@ -53,6 +53,7 @@ void Commands::handleUserCommand(const std::string& msg, Client& client) {
 
 void Commands::handleNickCommand(const std::string& nick, Client& client) {
 	client.setNickname(nick);
+	std::cout << "Nickname set to: " << nick << std::endl;
 }
 
 void Commands::handleModeCommand(const std::string& msg, Client& client) {

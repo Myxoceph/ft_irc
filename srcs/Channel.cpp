@@ -1,5 +1,11 @@
 #include "Channel.hpp"
 
+Channel::Channel()
+{
+	this->name = "";
+	this->pwd = "";
+}
+
 Channel::Channel(const std::string& name)
 {
 	this->name = name;

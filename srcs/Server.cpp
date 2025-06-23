@@ -16,7 +16,6 @@ Server::~Server()
 std::string remove_escape_chars(const char* input) {
 	std::string result;
 	for (const char* p = input; *p != '\0'; ++p) {
-		// Remove common control characters: \n, \r, \t, \v, \f, \b
 		if (*p != '\n' && *p != '\r' && *p != '\t' &&
 			*p != '\v' && *p != '\f' && *p != '\b') {
 			result += *p;
@@ -181,67 +180,67 @@ void Server::send_message(int client_fd, const std::string& message)
 	send(client_fd, msg.c_str(), msg.length(), 0);
 }
 
-void Server::handleCommand(Client& client, const std::string& line)
-{
-	std::istringstream iss(line);
-	std::string cmd;
-	iss >> cmd;
+// void Server::handleCommand(Client& client, const std::string& line)
+// {
+// 	std::istringstream iss(line);
+// 	std::string cmd;
+// 	iss >> cmd;
 
-	std::cout << "Handling command: " << cmd << std::endl;
-	if (cmd == "NICK")
-	{
-		std::string nick;
-		iss >> nick;
-		client.setNickname(nick);
-		std::cout << "Nickname set to: " << nick << std::endl;
-	}
-	else if (cmd == "USER")
-	{
-		std::string user;
-		iss >> user;
-		client.setUsername(user);
-		std::cout << "Username set to: " << user << std::endl;
-	}
-	else if (cmd == "PING")
-	{
-		std::string token;
-		iss >> token;
-		std::string pong = "PONG " + token + "\r\n";
-		write(client.getFd(), pong.c_str(), pong.length());
-	}
-	else if (cmd == "JOIN")
-	{
-		std::string channel;
-		iss >> channel;
-		if (channel.empty())
-		{
-			std::string msg = "JOIN command requires a channel name.\r\n";
-			write(client.getFd(), msg.c_str(), msg.length());
-			return;
-		}
-		client.joinChannel(channel);
-		std::cout << "Client joined channel: " << channel << std::endl;
-	}
-	else if (cmd == "PART")
-	{
-		std::string channel;
-		iss >> channel;
-		client.partChannel(channel);
-		std::cout << "Client parted from channel: " << channel << std::endl;
-	}
-	else if (cmd == "QUIT")
-	{
-		std::cout << "Client quitting: fd = " << client.getFd() << std::endl;
-		close(client.getFd());
-		fds.erase(std::remove_if(fds.begin(), fds.end(), PollFdMatch(client.getFd())), fds.end());
+// 	std::cout << "Handling command: " << cmd << std::endl;
+// 	if (cmd == "NICK")
+// 	{
+// 		std::string nick;
+// 		iss >> nick;
+// 		client.setNickname(nick);
+// 		std::cout << "Nickname set to: " << nick << std::endl;
+// 	}
+// 	else if (cmd == "USER")
+// 	{
+// 		std::string user;
+// 		iss >> user;
+// 		client.setUsername(user);
+// 		std::cout << "Username set to: " << user << std::endl;
+// 	}
+// 	else if (cmd == "PING")
+// 	{
+// 		std::string token;
+// 		iss >> token;
+// 		std::string pong = "PONG " + token + "\r\n";
+// 		write(client.getFd(), pong.c_str(), pong.length());
+// 	}
+// 	else if (cmd == "JOIN")
+// 	{
+// 		std::string channel;
+// 		iss >> channel;
+// 		if (channel.empty())
+// 		{
+// 			std::string msg = "JOIN command requires a channel name.\r\n";
+// 			write(client.getFd(), msg.c_str(), msg.length());
+// 			return;
+// 		}
+// 		client.joinChannel(channel);
+// 		std::cout << "Client joined channel: " << channel << std::endl;
+// 	}
+// 	else if (cmd == "PART")
+// 	{
+// 		std::string channel;
+// 		iss >> channel;
+// 		client.partChannel(channel);
+// 		std::cout << "Client parted from channel: " << channel << std::endl;
+// 	}
+// 	else if (cmd == "QUIT")
+// 	{
+// 		std::cout << "Client quitting: fd = " << client.getFd() << std::endl;
+// 		close(client.getFd());
+// 		fds.erase(std::remove_if(fds.begin(), fds.end(), PollFdMatch(client.getFd())), fds.end());
 		
-	}
-	else
-	{
-		std::string msg = "Unknown command: " + cmd + "\r\n";
-		write(client.getFd(), msg.c_str(), msg.length());
-	}
-}
+// 	}
+// 	else
+// 	{
+// 		std::string msg = "Unknown command: " + cmd + "\r\n";
+// 		write(client.getFd(), msg.c_str(), msg.length());
+// 	}
+// }
 
 
 void Server::handleClientMessage(Client& client, std::string& msg)
@@ -252,7 +251,8 @@ void Server::handleClientMessage(Client& client, std::string& msg)
 	{
 		std::string line = buffer.substr(0, pos);
 		buffer.erase(pos, pos + 2);
-		handleCommand(client, line);
+		Commands commands(clients, channels);
+		commands.executeCommand(line, client);
 	}
 }
 
