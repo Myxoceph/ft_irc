@@ -13,6 +13,18 @@ Server::~Server()
 
 }
 
+std::string remove_escape_chars(const char* input) {
+	std::string result;
+	for (const char* p = input; *p != '\0'; ++p) {
+		// Remove common control characters: \n, \r, \t, \v, \f, \b
+		if (*p != '\n' && *p != '\r' && *p != '\t' &&
+			*p != '\v' && *p != '\f' && *p != '\b') {
+			result += *p;
+		}
+	}
+	std::cout << "Removing escape characters: " << result << std::endl;
+	return result;
+}
 
 void Server::run()
 {
@@ -26,51 +38,127 @@ void Server::run()
 		if (fds[0].revents & POLLIN)
 		{
 			int client_fd = accept(server_fd, NULL, NULL);
-			clients.insert(std::make_pair(client_fd, Client(client_fd)));
-
 			if (client_fd == -1)
 				throw std::runtime_error(RED"Error accepting new client: " + std::string(strerror(errno)) + RESET);
-			else
-			{
-				struct pollfd client_pollfd;
-				client_pollfd.fd = client_fd;
-				client_pollfd.events = POLLIN;
-				fds.push_back(client_pollfd);
+
+			if (fcntl(client_fd, F_SETFL, O_NONBLOCK) == -1)
+				throw std::runtime_error(RED"Error setting non-blocking mode: " + std::string(strerror(errno)) + RESET);
+			clients.insert(std::make_pair(client_fd, Client(client_fd)));
+
+			struct pollfd client_pollfd;
+			client_pollfd.fd = client_fd;
+			client_pollfd.events = POLLIN;
+			fds.push_back(client_pollfd);
 	
-				std::cout << "New client connected: fd=" << client_fd << std::endl;
-			}
+			std::cout << "New client connected: fd = " << client_fd << std::endl;
 			ready--;
 		}
-	
+
 		for (size_t i = 1; i < fds.size() && ready > 0; ++i)
 		{
+			if (fds[i].revents & (POLLHUP | POLLERR))
+			{
+				std::cout << "Client error/disconnect: fd = " << fds[i].fd << std::endl;
+				close(fds[i].fd);
+				fds.erase(fds.begin() + i);
+				--i;
+				ready--;
+				continue;
+			}
+
 			if (fds[i].revents & POLLIN)
 			{
-				char buffer[512];
-				ssize_t n = read(fds[i].fd, buffer, sizeof(buffer) - 1);
-				if (n <= 0)
+				char buffer[1024];
+				ssize_t n;
+
+				while ((n = read(fds[i].fd, buffer, sizeof(buffer) - 1)) > 0)
 				{
-					if (n == 0)
-						std::cout << "Client disconnected: fd= " << fds[i].fd << std::endl;
-					else
-						throw std::runtime_error(RED"Error reading from client: " + std::string(strerror(errno)) + RESET);
+					buffer[n] = '\0';
+
+					Client& client = clients.at(fds[i].fd);
+					client.appendToBuffer(buffer);
+
+					std::string message;
+					while (client.hasFullMessage(message))
+					{
+						handleClientMessage(client, message);
+						std::cout << "IRC message from {" << fds[i].fd << "} : [" << message << "]" << std::endl;
+					}
+				}
+				if (n == 0)
+				{
+					std::cout << "Client disconnected: fd = " << fds[i].fd << std::endl;
 					close(fds[i].fd);
 					fds.erase(fds.begin() + i);
 					--i;
 				}
-				else
-				{
-					buffer[n] = '\0';
-					Client& client = clients.at(fds[i].fd);
-					client.appendToBuffer(buffer);
-					handleClientMessage(client);
-					std::cout << "Received from fd " << fds[i].fd << ": " << client.getBuffer().substr(0, (client.getBuffer().size() - 4)) << std::endl;
-				}
+				else if (n < 0 && errno != EAGAIN && errno != EWOULDBLOCK)
+					throw std::runtime_error(RED"Error reading from client: " + std::string(strerror(errno)) + RESET);
 				ready--;
 			}
 		}
 	}
 }
+
+
+
+// void Server::run()
+// {
+// 	while (true)
+// 	{
+// 		int ready = poll(fds.data(), fds.size(), -1);
+
+// 		if (ready == -1)
+// 			throw std::runtime_error(RED"Error during poll: " + std::string(strerror(errno)) + RESET);
+
+// 		if (fds[0].revents & POLLIN)
+// 		{
+// 			int client_fd = accept(server_fd, NULL, NULL);
+// 			clients.insert(std::make_pair(client_fd, Client(client_fd)));
+
+// 			if (client_fd == -1)
+// 				throw std::runtime_error(RED"Error accepting new client: " + std::string(strerror(errno)) + RESET);
+// 			else
+// 			{
+// 				struct pollfd client_pollfd;
+// 				client_pollfd.fd = client_fd;
+// 				client_pollfd.events = POLLIN;
+// 				fds.push_back(client_pollfd);
+	
+// 				std::cout << "New client connected: fd=" << client_fd << std::endl;
+// 			}
+// 			ready--;
+// 		}
+	
+// 		for (size_t i = 1; i < fds.size() && ready > 0; ++i)
+// 		{
+// 			if (fds[i].revents & POLLIN)
+// 			{
+// 				char buffer[1024];
+// 				ssize_t n = read(fds[i].fd, buffer, sizeof(buffer) - 1);
+// 				if (n <= 0)
+// 				{
+// 					if (n == 0)
+// 						std::cout << "Client disconnected: fd= " << fds[i].fd << std::endl;
+// 					else
+// 						throw std::runtime_error(RED"Error reading from client: " + std::string(strerror(errno)) + RESET);
+// 					close(fds[i].fd);
+// 					fds.erase(fds.begin() + i);
+// 					--i;
+// 				}
+// 				else
+// 				{
+// 					buffer[n] = '\0';
+// 					Client& client = clients.at(fds[i].fd);
+// 					client.appendToBuffer(buffer);
+// 					handleClientMessage(client);
+// 					std::cout << "Received from fd " << fds[i].fd << ": " << remove_escape_chars(buffer) << std::endl;
+// 				}
+// 				ready--;
+// 			}
+// 		}
+// 	}
+// }
 
 
 bool Server::checkPort(const std::string& port)
@@ -99,6 +187,7 @@ void Server::handleCommand(Client& client, const std::string& line)
 	std::string cmd;
 	iss >> cmd;
 
+	std::cout << "Handling command: " << cmd << std::endl;
 	if (cmd == "NICK")
 	{
 		std::string nick;
@@ -155,14 +244,14 @@ void Server::handleCommand(Client& client, const std::string& line)
 }
 
 
-void Server::handleClientMessage(Client& client)
+void Server::handleClientMessage(Client& client, std::string& msg)
 {
-	std::string& buffer = client.getBuffer();
+	std::string &buffer = msg;
 	size_t pos;
 	while ((pos = buffer.find("\r\n")) != std::string::npos)
 	{
 		std::string line = buffer.substr(0, pos);
-		buffer.erase(0, pos + 2);
+		buffer.erase(pos, pos + 2);
 		handleCommand(client, line);
 	}
 }

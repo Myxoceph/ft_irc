@@ -40,7 +40,7 @@ class Server
 			std::map<std::string, Channel> channels;
 			bool checkPort(const std::string& port);
 			void initServer(const std::string& port);
-			void handleClientMessage(Client& client);
+			void handleClientMessage(Client& client, std::string& line);
 			void handleCommand(Client& client, const std::string& line);
 			// void initCmds();
 

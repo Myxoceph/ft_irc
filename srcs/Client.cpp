@@ -117,3 +117,14 @@ void Client::clearBuffer()
 {
 	buffer.clear();
 }
+
+bool Client::hasFullMessage(std::string& out)
+{
+	size_t pos = buffer.find("\r\n");
+	if (pos == std::string::npos)
+		return false;
+
+	out = buffer.substr(0, pos + 2);
+	buffer.erase(0, pos + 2);
+	return true;
+}
