@@ -29,6 +29,7 @@ class Client
 			std::string	getServername() const;
 			bool		getIsauth() const;
 			bool		getIsop() const;
+			bool		hasFullMessage(std::string& out);
 			std::string	&getBuffer();
 
 			void appendToBuffer(const std::string& buffer);
