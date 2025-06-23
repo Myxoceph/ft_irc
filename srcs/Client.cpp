@@ -4,7 +4,8 @@
 Client::Client(const int& fd)
 {
 	this->fd = fd;
-	this->isauth = false;
+	this->sentNick = false;
+	this->hasUsername = false;
 	this->isop = false;
 }
 
@@ -38,10 +39,6 @@ void Client::setServername(const std::string& servername)
 	this->servername = servername;
 }
 
-void Client::setIsauth(const bool& isauth)
-{
-	this->isauth = isauth;
-}
 
 void Client::setIsop(const bool& isop)
 {
@@ -78,9 +75,27 @@ std::string Client::getServername() const
 	return (this->servername);
 }
 
-bool Client::getIsauth() const
+bool Client::isAuthenticated() const
 {
-	return (this->isauth);
+	return (this->sentNick && this->hasUsername);
+}
+
+const std::vector<std::string>& Client::getJoinedChannels() const
+{
+	return (this->joined_channels);
+}
+
+void Client::joinChannel(const std::string& channel)
+{
+	if (std::find(joined_channels.begin(), joined_channels.end(), channel) == joined_channels.end())
+		joined_channels.push_back(channel);
+}
+
+void Client::partChannel(const std::string& channel)
+{
+	std::vector<std::string>::iterator it = std::find(joined_channels.begin(), joined_channels.end(), channel);
+	if (it != joined_channels.end())
+		joined_channels.erase(it);
 }
 
 bool Client::getIsop() const

@@ -209,6 +209,33 @@ void Server::handleCommand(Client& client, const std::string& line)
 		std::string pong = "PONG " + token + "\r\n";
 		write(client.getFd(), pong.c_str(), pong.length());
 	}
+	else if (cmd == "JOIN")
+	{
+		std::string channel;
+		iss >> channel;
+		if (channel.empty())
+		{
+			std::string msg = "JOIN command requires a channel name.\r\n";
+			write(client.getFd(), msg.c_str(), msg.length());
+			return;
+		}
+		client.joinChannel(channel);
+		std::cout << "Client joined channel: " << channel << std::endl;
+	}
+	else if (cmd == "PART")
+	{
+		std::string channel;
+		iss >> channel;
+		client.partChannel(channel);
+		std::cout << "Client parted from channel: " << channel << std::endl;
+	}
+	else if (cmd == "QUIT")
+	{
+		std::cout << "Client quitting: fd = " << client.getFd() << std::endl;
+		close(client.getFd());
+		fds.erase(std::remove_if(fds.begin(), fds.end(), PollFdMatch(client.getFd())), fds.end());
+		
+	}
 	else
 	{
 		std::string msg = "Unknown command: " + cmd + "\r\n";
