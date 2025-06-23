@@ -3,17 +3,20 @@
 
 #include <iostream>
 #include <set>
+#include <vector>
 #include "Server.hpp"
 #include "Client.hpp"
+
+class Client;
 
 class Channel
 {
 	private:
 			std::string				name;
 			std::string				pwd;
-			std::set<std::string>	users;
-			std::set<std::string>	ops;
-			std::set<std::string>	blacklists;
+			std::vector<Client>		users;
+			std::vector<std::string>	ops;
+			std::vector<std::string>	blacklists;
 	public:
 			Channel();
 			Channel(const std::string& name);
@@ -23,6 +26,9 @@ class Channel
 
 			std::string	getName() const;
 			std::string	getPwd() const;
+			void addUser(const Client& user);
+			void removeUser(const Client& user);
+			std::vector<Client>& getUsers();
 
 };
 
