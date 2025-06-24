@@ -3,7 +3,8 @@
 #include <string>
 #include <vector>
 
-std::vector<std::string> split(const std::string& str, const std::string& delimiter) {
+std::vector<std::string> split(const std::string& str, const std::string& delimiter)
+{
 	std::vector<std::string> tokens;
 	size_t pos = 0;
 	std::string token;
@@ -85,24 +86,25 @@ parseInfo Parser::parse(std::string message) {
 userInfo Parser::userParse(std::string message) {
 	userInfo user;
 	std::vector<std::string> words = split(message, " ");
-	if (words.size() < 5)
+	if (words.size() < 4)
 	{
 		user.nickName = "";
-		user.password = "";
 		user.userName = "";
 		user.realName = "";
-		user.hostName = "";
 		return user;
 	}
 	user.userName = words[1];
+	user.nickName = words[1];
 	user.realName = words[4].replace(0, 1, "");
+	std::cout << "Real name: " << user.realName << std::endl;
+	std::cout << "User name: " << user.userName << std::endl;
 	return user;
 }
 
 modeInfo Parser::modeParse(std::string message) {
 	modeInfo info;
 	std::vector<std::string> words = split(message, " ");
-	if (words.size() < 3)
+	if (words.size() <= 2)
 	{
 		info.channel = "";
 		info.status = false;

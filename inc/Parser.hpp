@@ -3,6 +3,7 @@
 
 #include <string>
 #include <sstream>
+#include <vector>
 
 struct userInfo {
 	std::string nickName;
@@ -49,5 +50,7 @@ class Parser
 		static userInfo userParse(std::string message);
 		static modeInfo modeParse(std::string message);
 };
+
+std::vector<std::string> split(const std::string& str, const std::string& delimiter);
 
 #endif

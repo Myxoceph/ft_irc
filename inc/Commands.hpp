@@ -24,6 +24,10 @@ private:
 	void handleUserCommand(const std::string& msg, Client& client);
 	void handleNickCommand(const std::string& nick, Client& client);
 	void handleModeCommand(const std::string& msg, Client& client);
+	void handlePartCommand(const std::string& msg, Client& client);
+	void handleQuitCommand(const std::string& msg, Client& client);
+	void handleTopicCommand(const std::string& msg, Client& client);
+	void handleKickCommand(const std::string& msg, Client& client);
 };
 
 #endif

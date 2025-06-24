@@ -4,6 +4,8 @@ Channel::Channel()
 {
 	this->name = "";
 	this->pwd = "";
+	this->invOnly = false;
+	this->maxUsers = -1;
 }
 
 Channel::Channel(const std::string& name)
@@ -24,6 +26,32 @@ void Channel::setName(const std::string& name)
 void Channel::setPwd(const std::string& pwd)
 {
 	this->pwd = pwd;
+}
+
+void Channel::setInvOnly(const bool& invOnly)
+{
+	this->invOnly = invOnly;
+}
+
+void Channel::setMaxUsers(const int& maxUsers)
+{
+	this->maxUsers = maxUsers;
+}
+
+bool Channel::getInvOnly() const
+{
+	return (this->invOnly);
+}
+
+int Channel::getMaxUsers() const
+{
+	return (this->maxUsers);
+}
+
+void Channel::addOp(const std::string& op)
+{
+	ops.push_back(op);
+	std::cout << op << " has been given operator in channel " << this->name << std::endl;
 }
 
 std::string Channel::getName() const
@@ -71,4 +99,20 @@ void Channel::removeUser(const Client& user)
 std::vector<Client>& Channel::getUsers()
 {
 	return (this->users);
+}
+
+std::vector<std::string> Channel::getOps()
+{
+	return (this->ops);
+}
+
+std::string Channel::getTopic() const
+{
+	return (this->topic);
+}
+
+void Channel::setTopic(const std::string& topic)
+{
+	this->topic = topic;
+	std::cout << "Topic for channel " << this->name << " set to: " << topic << std::endl;
 }
