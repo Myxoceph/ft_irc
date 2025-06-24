@@ -28,6 +28,7 @@ private:
 	void handleQuitCommand(const std::string& msg, Client& client);
 	void handleTopicCommand(const std::string& msg, Client& client);
 	void handleKickCommand(const std::string& msg, Client& client);
+	void handleInviteCommand(const std::string& msg, Client& client);
 };
 
 #endif
