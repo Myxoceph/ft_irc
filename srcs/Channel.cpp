@@ -51,7 +51,7 @@ int Channel::getMaxUsers() const
 void Channel::addOp(const std::string& op)
 {
 	ops.push_back(op);
-	std::string modeMsg = ":server_name MODE #test +o alice\r\n";
+	std::string modeMsg = ":server_name MODE #test +o " + op + "\r\n";
 	for (std::vector<Client>::iterator it = users.begin(); it != users.end(); ++it)
 		send(it->getFd(), modeMsg.c_str(), modeMsg.size(), 0);
 	std::cout << op << " has been given operator in channel " << this->name << std::endl;
@@ -90,13 +90,12 @@ void Channel::removeUser(const Client& user)
 	{
 		if (it->getNickname() == user.getNickname())
 		{
+			std::cout << "User " << it->getNickname() << " removed from channel " << this->name << std::endl;
 			users.erase(it);
-			std::cout << "User " << user.getNickname() << " removed from channel " << this->name << std::endl;
 			return;
 		}
 		++it;
 	}
-	std::cout << "User " << user.getNickname() << " not found in channel " << this->name << std::endl;
 }
 
 std::vector<Client>& Channel::getUsers()

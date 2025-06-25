@@ -29,6 +29,7 @@ private:
 	void handleTopicCommand(const std::string& msg, Client& client);
 	void handleKickCommand(const std::string& msg, Client& client);
 	void handleInviteCommand(const std::string& msg, Client& client);
+	bool isOP(const std::string& channelName, const Client& client);
 };
 
 #endif
