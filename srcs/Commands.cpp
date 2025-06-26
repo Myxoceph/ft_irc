@@ -175,7 +175,7 @@ void Commands::handleNickCommand(const std::string& nick, Client& client)
 void Commands::handleModeCommand(const std::string& msg, Client& client)
 {
 	modeInfo info = Parser::modeParse(msg);
-	if (info.channel.empty())
+	if (info.key.empty())
 	{
 		std::string err = "401 " + client.getNickname() + " :No such channel\r\n";
 		send(client.getFd(), err.c_str(), err.size(), 0);
@@ -248,9 +248,14 @@ void Commands::handlePartCommand(const std::string& msg, Client& client)
 		send(client.getFd(), err.c_str(), err.size(), 0);
 		return;
 	}
+	std::string noticeMsg = ":" + client.getNickname() + "!" + client.getUsername() + "@" + client.getHostname() + " PART " + channelName + "\r\n";
+	for (std::vector<Client>::iterator it = channels[channelName].getUsers().begin(); it != channels[channelName].getUsers().end(); ++it)
+	{
+		send(it->getFd(), noticeMsg.c_str(), noticeMsg.size(), 0);
+	}
 	channels[channelName].removeUser(client);
-	std::string partMsg = ":" + client.getNickname() + " PART " + channelName + "\r\n";
-	send(client.getFd(), partMsg.c_str(), partMsg.size(), 0);
+	if (channels[channelName].getUsers().empty())
+		channels.erase(channelName);
 }
 
 void Commands::handleQuitCommand(const std::string& msg, Client& client)
@@ -278,7 +283,7 @@ void Commands::handleTopicCommand(const std::string& msg, Client& client)
 		send(client.getFd(), err.c_str(), err.size(), 0);
 		return;
 	}
-	if (!isOP(channelName, client))
+	if (words.size() != 2 && !isOP(channelName, client))
 	{
 		std::string err = "482 " + client.getNickname() + " " + channelName + " :You're not channel operator\r\n";
 		send(client.getFd(), err.c_str(), err.size(), 0);
@@ -293,8 +298,13 @@ void Commands::handleTopicCommand(const std::string& msg, Client& client)
 		send(client.getFd(), topicMsg.c_str(), topicMsg.size(), 0);
 		return;
 	}
-	channels[channelName].setTopic(words[2]);
-	std::string topicSetMsg = ":server 333 " + client.getNickname() + " " + channelName + " :" + words[2] + "\r\n";
+	else
+	{
+		std::string topicSetMsg = "The topic for " + channelName + " has been set to: " + msg.substr(12) + "\r\n";
+		send(client.getFd(), topicSetMsg.c_str(), topicSetMsg.size(), 0);
+		channels[channelName].setTopic(msg.substr(12));
+	}
+	std::string topicSetMsg = ":server 333 " + client.getNickname() + " " + channelName + " :" + msg.substr(12) + "\r\n";
 	send(client.getFd(), topicSetMsg.c_str(), topicSetMsg.size(), 0);
 }
 
@@ -334,6 +344,12 @@ void Commands::handleKickCommand(const std::string& msg, Client& client)
 		send(client.getFd(), err.c_str(), err.size(), 0);
 		return;
 	}
+	if (client.getNickname() == targetNick)
+	{
+		std::string err = ":" + client.getNickname() + " NOTICE " + client.getNickname() + " :Can't kick yourself lil bro 😭\r\n";
+		send(client.getFd(), err.c_str(), err.size(), 0);
+		return;
+	}
 	if (!isOP(channelName, client))
 	{
 		std::string err = "482 " + client.getNickname() + " " + channelName + " :You're not channel operator\r\n";
@@ -344,14 +360,16 @@ void Commands::handleKickCommand(const std::string& msg, Client& client)
 	{
 		if (it->getNickname() == targetNick)
 		{
-			std::string kickMsg = ":" + client.getNickname() + " KICK " + channelName + " " + targetNick + "\r\n";
-			for (std::vector<Client>::iterator user = users.begin(); user != users.end(); ++user)
-				send(user->getFd(), kickMsg.c_str(), kickMsg.size(), 0);
+			// std::string kickMsg = ":" + client.getNickname() + " KICK " + channelName + " " + targetNick + "\r\n";
+			// for (std::vector<Client>::iterator user = users.begin(); user != users.end(); ++user)
+			// 	send(user->getFd(), kickMsg.c_str(), kickMsg.size(), 0);
+			std::string noticeMsg = ":" + client.getNickname() + "!" + client.getUsername() + "@" + client.getHostname() + " KICK " + channelName + " " + targetNick + "\r\n";
+			for (std::vector<Client>::iterator it = channels[channelName].getUsers().begin(); it != channels[channelName].getUsers().end(); ++it)
+				send(it->getFd(), noticeMsg.c_str(), noticeMsg.size(), 0);
 			channels[channelName].removeUser(*it);
 			return;
 		}
 	}
-
 	std::string err = "441 " + client.getNickname() + " " + targetNick + " :They aren't on that channel\r\n";
 	send(client.getFd(), err.c_str(), err.size(), 0);
 }
