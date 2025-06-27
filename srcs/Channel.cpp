@@ -6,6 +6,7 @@ Channel::Channel()
 	this->pwd = "";
 	this->invOnly = false;
 	this->maxUsers = -1;
+	this->topic = "The topic has not been set yet.";
 }
 
 Channel::Channel(const std::string& name)
@@ -48,13 +49,14 @@ int Channel::getMaxUsers() const
 	return (this->maxUsers);
 }
 
-void Channel::addOp(const std::string& op)
+void Channel::addOp(const std::string& op, const Client& source)
 {
 	ops.push_back(op);
-	std::string modeMsg = ":server_name MODE #test +o " + op + "\r\n";
+	std::string prefix = ":" + source.getNickname() + "!" + source.getUsername() + "@" + source.getHostname();
+	std::string modeMsg = prefix + " MODE " + this->name + " +o " + op + "\r\n";
+
 	for (std::vector<Client>::iterator it = users.begin(); it != users.end(); ++it)
 		send(it->getFd(), modeMsg.c_str(), modeMsg.size(), 0);
-	std::cout << op << " has been given operator in channel " << this->name << std::endl;
 }
 
 std::string Channel::getName() const
@@ -116,7 +118,6 @@ std::string Channel::getTopic() const
 void Channel::setTopic(const std::string& topic)
 {
 	this->topic = topic;
-	std::cout << "Topic for channel " << this->name << " set to: " << topic << std::endl;
 }
 
 std::vector<std::string> Channel::getInvitedUsers() const
@@ -135,4 +136,9 @@ void Channel::addinvitedUser(const std::string& user)
 	{
 		std::cout << "User " << user << " is already in the invited list of channel " << this->name << std::endl;
 	}
+}
+
+bool Channel::isOp(const std::string &nickName) const
+{
+	return (std::find(ops.begin(), ops.end(), nickName) != ops.end());
 }

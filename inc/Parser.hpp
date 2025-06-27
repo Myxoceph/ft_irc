@@ -42,6 +42,11 @@ struct modeInfo
 	std::string parameters;
 };
 
+struct passInfo
+{
+	std::string password;
+};
+
 class Parser
 {
 	public:
@@ -49,6 +54,7 @@ class Parser
 		static parseInfo parse(std::string  message);
 		static userInfo userParse(std::string message);
 		static modeInfo modeParse(std::string message);
+		static passInfo passParse(std::string message);
 };
 
 std::vector<std::string> split(const std::string& str, const std::string& delimiter);

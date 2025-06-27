@@ -2,12 +2,19 @@
 #include "Parser.hpp"
 #include <iostream>
 
-static int stringToInt(const std::string& str)
+static int ft_atoi(const std::string& str)
 {
 	std::stringstream ss(str);
 	int num;
 	ss >> num;
 	return num;
+}
+
+static std::string ft_itoa(int num)
+{
+	std::stringstream ss;
+	ss << num;
+	return ss.str();
 }
 
 Commands::Commands(std::map<int, Client>& c, std::map<std::string, Channel>& ch)
@@ -18,28 +25,78 @@ void Commands::executeCommand(const std::string& raw, Client& client)
 	parseInfo info = Parser::parse(raw);
 	std::string cmd = info.command;
 
-	if (cmd == "JOIN")
-		handleJoin(info.function, client);
-	else if (cmd == "PRIVMSG")
-		handlePrivmsg(raw, client);
-	else if (cmd == "USER")
-		handleUserCommand(raw, client);
-	else if (cmd == "NICK")
-		handleNickCommand(info.function, client);
-	else if (cmd == "MODE")
-		handleModeCommand(raw, client);
-	else if (cmd == "PART")
-		handlePartCommand(raw, client);
-	else if (cmd == "QUIT")
-		handleQuitCommand(raw, client);
-	else if (cmd == "TOPIC")
-		handleTopicCommand(raw, client);
-	else if (cmd == "KICK")
-		handleKickCommand(raw, client);
-	else if (cmd == "INVITE")
-		handleInviteCommand(raw, client);
+	if (cmd == "PASS")
+	{
+		if (client.getIsAuth())
+		{
+			std::string err = "462 " + client.getNickname() + " :You may not reregister\r\n";
+			send(client.getFd(), err.c_str(), err.size(), 0);
+			return;
+		}
+		if (info.function.empty())
+		{
+			std::string err = "461 " + client.getNickname() + " PASS :Not enough parameters\r\n";
+			send(client.getFd(), err.c_str(), err.size(), 0);
+			return;
+		}
+		if (info.function != client.getPwd())
+		{
+			std::string err = "464 :Password incorrect. Use /PASS <pwd> and provide the password\r\n";
+			send(client.getFd(), err.c_str(), err.size(), 0);
+			return;
+		}
+		client.setIsAuth(true);
+		std::string success = "Welcome to the Concord. You are now registered.\r\n";
+		send(client.getFd(), success.c_str(), success.size(), 0);
+		return;
+	}
+	else if (client.getIsAuth())
+	{
+		if (!client.isProvided())
+		{
+			if (cmd != "USER" && cmd != "NICK")
+			{
+				std::string err = "Please provide your nickname and/or username by using /NICK <nickname> and/or /USER <'username' 0 * :'realname'>\r\n";
+				send(client.getFd(), err.c_str(), err.size(), 0);
+				return;
+			}
+			else if (cmd == "USER")
+				handleUserCommand(raw, client);
+			else if (cmd == "NICK")
+				handleNickCommand(info.function, client);
+		}
+		else if (client.isProvided())
+		{
+			if (cmd == "JOIN")
+				handleJoin(info.function, client);
+			else if (cmd == "PRIVMSG")
+				handlePrivmsg(raw, client);
+			else if (cmd == "USER")
+				handleUserCommand(raw, client);
+			else if (cmd == "NICK")
+				handleNickCommand(info.function, client);
+			else if (cmd == "MODE")
+				handleModeCommand(raw, client);
+			else if (cmd == "PART")
+				handlePartCommand(raw, client);
+			else if (cmd == "QUIT")
+				handleQuitCommand(raw, client);
+			else if (cmd == "TOPIC")
+				handleTopicCommand(raw, client);
+			else if (cmd == "KICK")
+				handleKickCommand(raw, client);
+			else if (cmd == "INVITE")
+				handleInviteCommand(raw, client);
+			else
+				std::cout << "Unknown command: " << cmd << std::endl;
+		}
+	}
 	else
-		std::cout << "Unknown command: " << cmd << std::endl;
+	{
+		std::string err = "451 :You have not registered\r\n";
+		send(client.getFd(), err.c_str(), err.size(), 0);
+		return;
+	}
 }
 
 bool Commands::isOP(const std::string& channelName, const Client& client)
@@ -56,6 +113,7 @@ bool Commands::isOP(const std::string& channelName, const Client& client)
 void Commands::handleJoin(const std::string& channelName, Client& client)
 {
 	std::string msg;
+	bool	isop = false;
 	if (channels.find(channelName) == channels.end())
 	{
 		channels[channelName] = Channel(channelName);
@@ -64,7 +122,8 @@ void Commands::handleJoin(const std::string& channelName, Client& client)
 		channels[channelName].setName(channelName);
 		channels[channelName].setInvOnly(false);
 		channels[channelName].setMaxUsers(-1);
-		channels[channelName].addOp(client.getNickname());
+		channels[channelName].addOp(client.getNickname(), client);
+		isop = true;
 	}
 	else
 	{
@@ -98,16 +157,33 @@ void Commands::handleJoin(const std::string& channelName, Client& client)
 	}
 	channels[channelName].addUser(client);
 	std::string joinMsg = ":" + client.getNickname() + "!" + client.getUsername() + "@" + client.getHostname() + " JOIN :" + channelName + "\r\n";
-	send(client.getFd(), joinMsg.c_str(), joinMsg.length(), 0);
+	for (std::vector<Client>::iterator it = channels[channelName].getUsers().begin(); it != channels[channelName].getUsers().end(); ++it)
+		send(it->getFd(), joinMsg.c_str(), joinMsg.length(), 0);
 
-	std::string topicMsg = ":server 332 " + client.getNickname() + " " + channelName + " :No topic is set\r\n";
+	std::string topicMsg = ":server 332 " + client.getNickname() + " " + channelName + channels[channelName].getTopic() + "\r\n";
 	send(client.getFd(), topicMsg.c_str(), topicMsg.length(), 0);
 
-	std::string namesMsg = ":server 353 " + client.getNickname() + " = " + channelName + " :" + client.getNickname() + "\r\n";
+	std::string names;
+	std::vector<Client> &users = channels[channelName].getUsers();
+	for (std::vector<Client>::iterator it = users.begin(); it != users.end(); ++it)
+	{
+		if (channels[channelName].isOp(it->getNickname()))
+			names += "@" + it->getNickname() + " ";
+		else
+			names += it->getNickname() + " ";
+	}
+	std::string namesMsg = ":server 353 " + client.getNickname() + " = " + channelName + " :" + names + "\r\n";
 	send(client.getFd(), namesMsg.c_str(), namesMsg.length(), 0);
 
 	std::string endNames = ":server 366 " + client.getNickname() + " " + channelName + " :End of /NAMES list.\r\n";
 	send(client.getFd(), endNames.c_str(), endNames.length(), 0);
+	if (isop)
+	{
+		std::string modeMsg = ":" + client.getNickname() + " MODE " + channelName + " +o " + client.getNickname() + "\r\n";
+		std::vector<Client>& users = channels[channelName].getUsers();
+		for (std::vector<Client>::iterator it = users.begin(); it != users.end(); ++it)
+			send(it->getFd(), modeMsg.c_str(), modeMsg.length(), 0);
+	}
 }
 
 void Commands::handlePrivmsg(const std::string& message, Client& sender)
@@ -158,6 +234,10 @@ void Commands::handleUserCommand(const std::string& msg, Client& client)
 	}
 	client.setUsername(info.userName);
 	client.setRealname(info.realName);
+	std::string noticeMsg = "Your username is set to: " + info.userName + "\r\n";
+	send(client.getFd(), noticeMsg.c_str(), noticeMsg.size(), 0);
+	std::string noticeMsg2 = "Your realname is set to: " + info.realName + "\r\n";
+	send(client.getFd(), noticeMsg2.c_str(), noticeMsg2.size(), 0);
 }
 
 void Commands::handleNickCommand(const std::string& nick, Client& client)
@@ -170,6 +250,10 @@ void Commands::handleNickCommand(const std::string& nick, Client& client)
 	}
 	client.setNickname(nick);
 	std::cout << "Nickname set to: " << nick << std::endl;
+	std::string welcomeMsg = ":server 001 " + client.getNickname() + " " + client.getNickname() + "\r\n"; 
+	send(client.getFd(), welcomeMsg.c_str(), welcomeMsg.size(), 0);
+	std::string noticeMsg = "Your nickname is set to: " + nick + "\r\n";
+	send(client.getFd(), noticeMsg.c_str(), noticeMsg.size(), 0);
 }
 
 void Commands::handleModeCommand(const std::string& msg, Client& client)
@@ -190,6 +274,7 @@ void Commands::handleModeCommand(const std::string& msg, Client& client)
 	std::vector<std::string> &ops = channels[info.channel].getOps();
 	std::vector<std::string>::iterator it = ops.begin();
 	std::vector<std::string>::iterator ite = ops.end();
+	std::string noticeMsg;
 	while (it != ite)
 	{
 		if (*it == client.getNickname())
@@ -201,28 +286,40 @@ void Commands::handleModeCommand(const std::string& msg, Client& client)
 					channels[info.channel].setInvOnly(info.status);
 				else
 					channels[info.channel].setInvOnly(0);
+				noticeMsg = client.getNickname() + " has changed the channel " + info.channel + "'s invite only mode." + (info.status ? " Now invite only." : " No longer invite only.");
 			}
 			else if (info.key == "k")
+			{
 				channels[info.channel].setPwd(info.parameters);
+				noticeMsg = client.getNickname() + " has changed the channel " + info.channel + "'s password to: " + info.parameters;
+			}
 			else if (info.key == "l")
 			{
-				int maxUsers = stringToInt(info.parameters);
+				int maxUsers = ft_atoi(info.parameters);
 				channels[info.channel].setMaxUsers(maxUsers);
+				noticeMsg = client.getNickname() + " has changed the channel " + info.channel + "'s max users to: " + ft_itoa(maxUsers);
 			}
 			else if (info.key == "o")
 			{
-				channels[info.channel].addOp(info.parameters);
+				channels[info.channel].addOp(info.parameters, client);
 				client.setIsop(true);
+				noticeMsg = client.getNickname() + " has given operator status to " + info.parameters + " in channel " + info.channel;
 			}
 			else if (info.key == "t")
 			{
 				channels[info.channel].setTopic(info.parameters);
+				noticeMsg = client.getNickname() + " has changed the topic for channel " + info.channel + " to: " + info.parameters;
 			}
 			else
 			{
 				std::string err = "472 " + client.getNickname() + " " + info.key + " :is unknown mode char\r\n";
 				send(client.getFd(), err.c_str(), err.size(), 0);
 				return;
+			}
+			for (std::vector<Client>::iterator user = channels[info.channel].getUsers().begin(); user != channels[info.channel].getUsers().end(); ++user)
+			{
+				std::string formattedNotice = ":server NOTICE " + user->getNickname() + " :" + noticeMsg + "\r\n";
+				send(user->getFd(), formattedNotice.c_str(), formattedNotice.size(), 0);
 			}
 			return;
 		}
@@ -292,8 +389,6 @@ void Commands::handleTopicCommand(const std::string& msg, Client& client)
 	if (words.size() == 2)
 	{
 		std::string topic = channels[channelName].getTopic();
-		if (topic.empty())
-			topic = "No topic is set.";
 		std::string topicMsg = ":server 332 " + client.getNickname() + " " + channelName + " :" + topic + "\r\n";
 		send(client.getFd(), topicMsg.c_str(), topicMsg.size(), 0);
 		return;

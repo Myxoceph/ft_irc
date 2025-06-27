@@ -4,9 +4,8 @@
 Client::Client(const int& fd)
 {
 	this->fd = fd;
-	this->sentNick = false;
-	this->hasUsername = false;
 	this->isop = false;
+	this->isAuth = false;
 }
 
 Client::~Client()
@@ -75,11 +74,6 @@ std::string Client::getServername() const
 	return (this->servername);
 }
 
-bool Client::isAuthenticated() const
-{
-	return (this->sentNick && this->hasUsername);
-}
-
 const std::vector<std::string>& Client::getJoinedChannels() const
 {
 	return (this->joined_channels);
@@ -127,4 +121,29 @@ bool Client::hasFullMessage(std::string& out)
 	out = buffer.substr(0, pos + 2);
 	buffer.erase(0, pos + 2);
 	return true;
+}
+
+void Client::setPwd(const std::string& pwd)
+{
+	this->pwd = pwd;
+}
+
+std::string Client::getPwd() const
+{
+	return this->pwd;
+}
+
+bool Client::getIsAuth() const
+{
+	return this->isAuth;
+}
+
+void Client::setIsAuth(const bool& isAuth)
+{
+	this->isAuth = isAuth;
+}
+
+bool Client::isProvided() const
+{
+	return !this->nickname.empty() && !this->username.empty() && !this->realname.empty();
 }

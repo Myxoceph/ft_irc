@@ -76,6 +76,7 @@ void Server::run()
 
 					Client& client = clients.at(fds[i].fd);
 					client.appendToBuffer(buffer);
+					client.setPwd(pwd);
 
 					std::string message;
 					while (client.hasFullMessage(message))

@@ -135,3 +135,15 @@ modeInfo Parser::modeParse(std::string message) {
 	}
 	return info;
 }
+
+passInfo Parser::passParse(std::string message) {
+	passInfo info;
+	std::vector<std::string> words = split(message, " ");
+	if (words.size() < 2)
+	{
+		info.password = "";
+		return info;
+	}
+	info.password = words[1];
+	return info;
+}

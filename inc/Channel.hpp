@@ -36,12 +36,13 @@ class Channel
 			std::string	getName() const;
 			std::string	getPwd() const;
 			bool		getInvOnly() const;
+			bool		isOp(const std::string& nickName) const;
 			int			getMaxUsers() const;
 			std::vector<std::string> &getOps();
 			std::string getTopic() const;
 			std::vector<std::string> getInvitedUsers() const;
 			void addUser(const Client& user);
-			void addOp(const std::string& op);
+			void addOp(const std::string& op, const Client& source);
 			void removeUser(const Client& user);
 			std::vector<Client>& getUsers();
 
