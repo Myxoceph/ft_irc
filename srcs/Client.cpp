@@ -1,11 +1,13 @@
 #include "Client.hpp"
 
 
+// Constructors and Destructors
 Client::Client(const int& fd)
 {
 	this->fd = fd;
 	this->isop = false;
 	this->isAuth = false;
+	this->hostname = "localhost"; // Initialize hostname
 }
 
 Client::~Client()
@@ -13,37 +15,8 @@ Client::~Client()
 
 }
 
-void Client::setNickname(const std::string& nickname)
-{
-	this->nickname = nickname;
-}
 
-void Client::setUsername(const std::string& username)
-{
-	this->username = username;
-}
-
-void Client::setHostname(const std::string& hostname)
-{
-	this->hostname = hostname;
-}
-
-void Client::setRealname(const std::string& realname)
-{
-	this->realname = realname;
-}
-
-void Client::setServername(const std::string& servername)
-{
-	this->servername = servername;
-}
-
-
-void Client::setIsop(const bool& isop)
-{
-	this->isop = isop;
-}
-
+// Getters
 int Client::getFd() const
 {
 	return (this->fd);
@@ -69,27 +42,9 @@ std::string Client::getRealname() const
 	return (this->realname);
 }
 
-std::string Client::getServername() const
+std::string Client::getPwd() const
 {
-	return (this->servername);
-}
-
-const std::vector<std::string>& Client::getJoinedChannels() const
-{
-	return (this->joined_channels);
-}
-
-void Client::joinChannel(const std::string& channel)
-{
-	if (std::find(joined_channels.begin(), joined_channels.end(), channel) == joined_channels.end())
-		joined_channels.push_back(channel);
-}
-
-void Client::partChannel(const std::string& channel)
-{
-	std::vector<std::string>::iterator it = std::find(joined_channels.begin(), joined_channels.end(), channel);
-	if (it != joined_channels.end())
-		joined_channels.erase(it);
+	return this->pwd;
 }
 
 bool Client::getIsop() const
@@ -97,11 +52,55 @@ bool Client::getIsop() const
 	return (this->isop);
 }
 
+bool Client::getIsAuth() const
+{
+	return this->isAuth;
+}
+
 std::string& Client::getBuffer()
 {
 	return buffer;
 }
 
+
+// Setters
+void Client::setNickname(const std::string& nickname)
+{
+	this->nickname = nickname;
+}
+
+void Client::setUsername(const std::string& username)
+{
+	this->username = username;
+}
+
+void Client::setHostname(const std::string& hostname)
+{
+	this->hostname = hostname;
+}
+
+void Client::setRealname(const std::string& realname)
+{
+	this->realname = realname;
+}
+
+void Client::setIsop(const bool& isop)
+{
+	this->isop = isop;
+}
+
+void Client::setIsAuth(const bool& isAuth)
+{
+	this->isAuth = isAuth;
+}
+
+void Client::setPwd(const std::string& pwd)
+{
+	this->pwd = pwd;
+}
+
+
+// Buffer management
 void Client::appendToBuffer(const std::string& data)
 {
 	buffer += data;
@@ -123,26 +122,8 @@ bool Client::hasFullMessage(std::string& out)
 	return true;
 }
 
-void Client::setPwd(const std::string& pwd)
-{
-	this->pwd = pwd;
-}
 
-std::string Client::getPwd() const
-{
-	return this->pwd;
-}
-
-bool Client::getIsAuth() const
-{
-	return this->isAuth;
-}
-
-void Client::setIsAuth(const bool& isAuth)
-{
-	this->isAuth = isAuth;
-}
-
+// Other methods
 bool Client::isProvided() const
 {
 	return !this->nickname.empty() && !this->username.empty() && !this->realname.empty();

@@ -3,56 +3,57 @@
 
 #include <iostream>
 #include <algorithm>
-#include "Server.hpp"
-#include "Channel.hpp"
-
+#include <vector>
+#include <string>
 
 class Client
 {
 	private:
-			int			fd;
+		// Client attributes
+		int			fd;
 			std::string	nickname;
 			std::string	username;
 			std::string	hostname;
 			std::string	realname;
-			std::string	servername;
-			std::string	buffer;
 			std::string pwd;
 			bool		isAuth;
 			bool		isop;
 
-			std::vector<std::string> joined_channels;
+			// Buffer for incoming data
+			std::string	buffer;
+
 	public:
+			// Constructors and Destructors
 			Client(const int& fd);
 			~Client();
+
+			// Getters
 			int			getFd() const;
 			std::string	getNickname() const;
 			std::string	getUsername() const;
 			std::string	getHostname() const;
 			std::string	getRealname() const;
-			std::string	getServername() const;
 			std::string	getPwd() const;
 			bool		getIsop() const;
-			bool		hasFullMessage(std::string& out);
 			bool		getIsAuth() const;
-			bool		isProvided() const;
 			std::string	&getBuffer();
 
-			void 		appendToBuffer(const std::string& buffer);
-			void 		clearBuffer();
-
-			void		setIsAuth(const bool& isAuth);
+			// Setters
 			void		setNickname(const std::string& nickname);
 			void		setUsername(const std::string& username);
 			void		setHostname(const std::string& hostname);
 			void		setRealname(const std::string& realname);
-			void		setServername(const std::string& servername);
 			void		setIsop(const bool& isop);
+			void		setIsAuth(const bool& isAuth);
 			void		setPwd(const std::string& pwd);
 
-			void		joinChannel(const std::string& channel);
-			void		partChannel(const std::string& channel);
-			const std::vector<std::string>& getJoinedChannels() const;
+			// Buffer management
+			void 		appendToBuffer(const std::string& data);
+			void 		clearBuffer();
+			bool		hasFullMessage(std::string& out);
+
+			// Other methods
+			bool		isProvided() const;
 };
 
 

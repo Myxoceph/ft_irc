@@ -2,61 +2,20 @@
 #define PARSER_HPP
 
 #include <string>
-#include <sstream>
 #include <vector>
 
-struct userInfo {
-	std::string nickName;
-	std::string password;
-	std::string userName;
-	std::string realName;
-	std::string hostName;
-};
-
-struct serverInfo
-{
-	std::string name;
-	std::string password;
-	std::string version;
-	std::string createDate;
-};
-
-struct reciveMessage
-{
-	std::string target;
-	std::string message;
-};
-
+// Structure to hold parsed IRC message info
 struct parseInfo
 {
 	std::string command;
-	std::string function;
-	std::string value;
+	std::vector<std::string> params;
 };
 
-struct modeInfo
-{
-	std::string channel;
-	bool status;
-	std::string key;
-	std::string parameters;
-};
-
-struct passInfo
-{
-	std::string password;
-};
-
+// Parser class for processing raw IRC messages
 class Parser
 {
 	public:
-		static reciveMessage privateMessage(std::string message);
-		static parseInfo parse(std::string  message);
-		static userInfo userParse(std::string message);
-		static modeInfo modeParse(std::string message);
-		static passInfo passParse(std::string message);
+		static parseInfo parse(std::string message);
 };
-
-std::vector<std::string> split(const std::string& str, const std::string& delimiter);
 
 #endif

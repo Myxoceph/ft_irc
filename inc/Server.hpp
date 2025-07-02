@@ -36,42 +36,43 @@ class Commands;
 
 class Server
 {
-	private:
-			int							server_fd;
-			std::string					pwd;
-			std::vector<struct pollfd>	fds;
-			std::map<int, Client>		clients;
-			std::map<std::string, Channel> channels;
-			bool checkPort(const std::string& port);
-			void initServer(const std::string& port);
-			void handleClientMessage(Client& client, std::string& line);
-			void handleCommand(Client& client, const std::string& line);
-			// void initCmds();
-
-			// typedef void (Server::*UsrCmds)(Client*, const std::vector<std::string>&);
-			// typedef void (Server::*ChCmds)(Channel*, Client*, const std::vector<std::string>&);
-			// typedef void (Server::*Cmds)(Client*, const std::vector<std::string>&);
-
-			// std::map<std::string, UsrCmds> usrCmds;
-			// std::map<std::string, ChCmds> chCmds;
-			// std::map<std::string, Cmds> cmds;
-
 	public:
-			Server(const std::string& port, const std::string& pwd);
-			~Server();
-			void run();
-			void send_message(int client_fd, const std::string& message);
+		// Constructor and Destructor
+		Server(const std::string& port, const std::string& pwd);
+		~Server();
 
-			struct PollFdMatch
+		// Public Methods
+		void run();
+
+	private:
+		// Server Attributes
+		int							server_fd;
+		std::string					pwd;
+
+		// Client and Channel Management
+		std::vector<struct pollfd>	fds;
+		std::map<int, Client>		clients;
+		std::map<std::string, Channel> channels;
+		Commands*					_commands;
+
+		// Functor for finding pollfd by fd
+		struct PollfdFinder
+		{
+			int fd_to_find;
+			PollfdFinder(int fd) : fd_to_find(fd) {}
+			bool operator()(const struct pollfd& pfd) const
 			{
-				int fdToRemove;
-				PollFdMatch(int fd) : fdToRemove(fd) {}
-			
-				bool operator()(const struct pollfd& pfd) const
-				{
-					return pfd.fd == fdToRemove;
-				}
-			};
+				return pfd.fd == fd_to_find;
+			}
+		};
+
+		// Private Methods
+		void initServer(const std::string& port);
+		void handleNewConnection();
+		void handleClientData(size_t i);
+		void removeClient(size_t i, bool graceful = false);
+		bool handleClientMessage(Client& client, std::string& line);
+		bool checkPort(const std::string& port);
 };
 
 #endif

@@ -3,147 +3,56 @@
 #include <string>
 #include <vector>
 
-std::vector<std::string> split(const std::string& str, const std::string& delimiter)
+namespace {
+	// Helper function to split a string by a delimiter.
+	// Note: This is a simple implementation and may not handle all edge cases perfectly (e.g., multiple spaces).
+	std::vector<std::string> split(const std::string& str, const std::string& delimiter)
+	{
+		std::vector<std::string> tokens;
+		size_t pos = 0;
+		std::string token;
+		std::string s = str;
+
+		while ((pos = s.find(delimiter)) != std::string::npos) {
+			token = s.substr(0, pos);
+			if (!token.empty())
+				tokens.push_back(token);
+			s.erase(0, pos + delimiter.length());
+		}
+		if (!s.empty())
+			tokens.push_back(s);
+		return tokens;
+	}
+} // anonymous namespace
+
+// Parses a raw IRC message into a command and its parameters.
+parseInfo Parser::parse(std::string message)
 {
-	std::vector<std::string> tokens;
-	size_t pos = 0;
-	std::string token;
-	std::string s = str;
-
-	while ((pos = s.find(delimiter)) != std::string::npos) {
-		token = s.substr(0, pos);
-		tokens.push_back(token);
-		s.erase(0, pos + delimiter.length());
-	}
-	tokens.push_back(s);
-	return tokens;
-}
-
-std::string trim(const std::string& str) {
-	size_t start = 0;
-	size_t end = str.size() - 1;
-
-	while (start <= end && std::isspace(str[start])) {
-		++start;
-	}
-
-	while (end >= start && std::isspace(str[end])) {
-		--end;
-	}
-
-	return str.substr(start, end - start + 1);
-}
-
-reciveMessage Parser::privateMessage(std::string message) {
-	reciveMessage info;
-	std::vector<std::string> words = split(message, " ");
-	if (words.size() < 3)
-	{
-		info.target = "";
-		info.message = "";
-		return info;
-	}
-
-	info.target = words[1];
-
-	if (words[2][0] == ':') {
-		words[2].erase(0, 1);
-	}
-	for (size_t i = 2; i < words.size(); i++) {
-		info.message += trim(words[i]);
-		if (i != words.size() - 1) {
-			info.message += " ";
-		}
-	}
-	return info;
-}
-
-parseInfo Parser::parse(std::string message) {
 	parseInfo info;
+	std::vector<std::string> tokens;
 
-	if (message.find(" ") == std::string::npos) {
-		info.command = message;
-		return info;
-	}
-	std::vector<std::string> words = split(message, " ");
-	info.command = trim(words[0]);
-	if (words.size() == 1) {
-		return info;
-	}
-	info.function = trim(words[1]);
-	if (words.size() == 2) {
-		return info;
-	}
-	for (size_t i = 2; i < words.size(); i++) {
-		info.value += trim(words[i]);
-		if (i != words.size() - 1) {
-			info.value += " ";
-		}
-	}
-	return info;
-}
+	// Check for a trailing parameter (prefixed with a colon)
+	size_t colonPos = message.find(" :");
 
-userInfo Parser::userParse(std::string message) {
-	userInfo user;
-	std::vector<std::string> words = split(message, " ");
-	if (words.size() < 4)
+	if (colonPos != std::string::npos)
 	{
-		user.nickName = "";
-		user.userName = "";
-		user.realName = "";
-		return user;
+		std::string beforeColon = message.substr(0, colonPos);
+		std::string afterColon = message.substr(colonPos + 2);
+		tokens = split(beforeColon, " ");
+		tokens.push_back(afterColon);
 	}
-	user.userName = words[1];
-	user.nickName = words[1];
-	user.realName = words[4].replace(0, 1, "");
-	std::cout << "Real name: " << user.realName << std::endl;
-	std::cout << "User name: " << user.userName << std::endl;
-	return user;
-}
+	else
+	{
+		tokens = split(message, " ");
+	}
 
-modeInfo Parser::modeParse(std::string message) {
-	modeInfo info;
-	std::vector<std::string> words = split(message, " ");
-	if (words.size() == 2)
+	// The first token is the command, the rest are parameters.
+	if (!tokens.empty())
 	{
-		info.channel = trim(words[1]);
-		info.status = false;
-		info.key = "";
-		info.parameters = "";
-		return info;
+		info.command = tokens[0];
+		tokens.erase(tokens.begin());
+		info.params = tokens;
 	}
-	if (words.size() < 3)
-	{
-		info.channel = "";
-		info.status = false;
-		info.key = "";
-		info.parameters = "";
-		return info;
-	}
-	info.channel = trim(words[1]);
-	info.status = words[2][0] == '+';
-	info.key = words[2][1];
-	if (words.size() == 3) {
-		return info;
-	}
-	info.parameters = trim(words[3]);
-	if (words.size() == 4) {
-		return info;
-	}
-	if (words.size() == 5) {
-		info.parameters += trim(words[4]);
-	}
-	return info;
-}
 
-passInfo Parser::passParse(std::string message) {
-	passInfo info;
-	std::vector<std::string> words = split(message, " ");
-	if (words.size() < 2)
-	{
-		info.password = "";
-		return info;
-	}
-	info.password = words[1];
 	return info;
 }
