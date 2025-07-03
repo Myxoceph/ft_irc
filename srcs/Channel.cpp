@@ -1,4 +1,6 @@
 #include "Channel.hpp"
+#include "Client.hpp"
+#include <sys/socket.h>
 
 Channel::Channel()
 {
@@ -12,6 +14,10 @@ Channel::Channel()
 Channel::Channel(const std::string& name)
 {
 	this->name = name;
+	this->pwd = "";
+	this->invOnly = false;
+	this->maxUsers = -1;
+	this->topic = "The topic has not been set yet.";
 }
 
 Channel::~Channel()

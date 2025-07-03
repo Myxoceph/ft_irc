@@ -3,9 +3,8 @@
 
 #include <iostream>
 #include <algorithm>
-#include "Server.hpp"
-#include "Channel.hpp"
-
+#include <string>
+#include <vector>
 
 class Client
 {

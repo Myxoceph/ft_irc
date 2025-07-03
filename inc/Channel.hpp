@@ -2,10 +2,9 @@
 #define CHANNEL_HPP
 
 #include <iostream>
-#include <set>
 #include <vector>
-#include "Server.hpp"
-#include "Client.hpp"
+#include <algorithm>
+#include <string>
 
 class Client;
 
@@ -15,12 +14,11 @@ class Channel
 			std::string				name;
 			std::string				pwd;
 			std::string				topic;
-			std::vector<Client>		users;
-			std::vector<std::string>	ops;
-			std::vector<std::string>	invitedUsers;
-			std::vector<std::string>	blacklists;
-			bool						invOnly;
-			int							maxUsers;
+		std::vector<Client>		users;
+		std::vector<std::string>	ops;
+		std::vector<std::string>	invitedUsers;
+		bool						invOnly;
+		int							maxUsers;
 
 	public:
 			Channel();

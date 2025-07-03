@@ -1,7 +1,7 @@
 NAME			=	ft_irc
 
 CC				=	c++
-CFLAGS			=	-std=c++98 #-Wall -Werror -Wextra
+CFLAGS			=	-std=c++98 -Wall -Werror -Wextra
 
 RM				=	rm -rf
 
@@ -11,7 +11,8 @@ INCLUDES_DIR	=	./inc/
 
 SRCS 			=	$(SRCS_DIR)main.cpp $(SRCS_DIR)Channel.cpp $(SRCS_DIR)Client.cpp $(SRCS_DIR)Server.cpp $(SRCS_DIR)Commands.cpp $(SRCS_DIR)Parser.cpp
 
-OBJS			=	$(patsubst $(SRCS_DIR)%.cpp, $(OBJS_DIR)%.o, $(SRCS))
+OBJS			=	$(patsubst $(SRCS_DIR)%.cpp,$(OBJS_DIR)%.o,$(SRCS))
+
 
 INCLUDES		=	-I$(INCLUDES_DIR)
 
