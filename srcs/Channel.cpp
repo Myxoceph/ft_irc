@@ -55,14 +55,9 @@ int Channel::getMaxUsers() const
 	return (this->maxUsers);
 }
 
-void Channel::addOp(const std::string& op, const Client& source)
+void Channel::addOp(const std::string& op)
 {
 	ops.push_back(op);
-	std::string prefix = ":" + source.getNickname() + "!" + source.getUsername() + "@" + source.getHostname();
-	std::string modeMsg = prefix + " MODE " + this->name + " +o " + op + "\r\n";
-
-	for (std::vector<Client>::iterator it = users.begin(); it != users.end(); ++it)
-		send(it->getFd(), modeMsg.c_str(), modeMsg.size(), 0);
 }
 
 std::string Channel::getName() const
@@ -148,3 +143,31 @@ bool Channel::isOp(const std::string &nickName) const
 {
 	return (std::find(ops.begin(), ops.end(), nickName) != ops.end());
 }
+
+void Channel::removeOp(const std::string& op)
+{
+	std::vector<std::string>::iterator it = std::find(ops.begin(), ops.end(), op);
+	if (it == ops.end())
+		return;
+	ops.erase(it);
+
+	if (!ops.empty())
+		return;
+	std::vector<Client> newlist = users;
+	for (std::vector<Client>::iterator iter = newlist.begin(); iter != newlist.end(); ++iter) {
+		if (iter->getNickname() == op) {
+			newlist.erase(iter);
+			break;
+		}
+	}
+	if (newlist.empty())
+		return;
+	Client& newOpClient = newlist[rand() % newlist.size()];
+	std::string newOp = newOpClient.getNickname();
+	ops.push_back(newOp);
+	std::string ModeMsg = ":Server MODE " + this->name + " +o " + newOp + "\r\n";
+	for (std::vector<Client>::iterator user = users.begin(); user != users.end(); ++user)
+		send(user->getFd(), ModeMsg.c_str(), ModeMsg.size(), 0);
+}
+
+// op issue somewhat fixed. need to handle part and kick too.

@@ -18,7 +18,6 @@ class Client
 			std::string	buffer;
 			std::string pwd;
 			bool		isAuth;
-			bool		isop;
 
 			std::vector<std::string> joined_channels;
 	public:
@@ -31,7 +30,6 @@ class Client
 			std::string	getRealname() const;
 			std::string	getServername() const;
 			std::string	getPwd() const;
-			bool		getIsop() const;
 			bool		hasFullMessage(std::string& out);
 			bool		getIsAuth() const;
 			bool		isProvided() const;
@@ -46,7 +44,6 @@ class Client
 			void		setHostname(const std::string& hostname);
 			void		setRealname(const std::string& realname);
 			void		setServername(const std::string& servername);
-			void		setIsop(const bool& isop);
 			void		setPwd(const std::string& pwd);
 
 			void		joinChannel(const std::string& channel);

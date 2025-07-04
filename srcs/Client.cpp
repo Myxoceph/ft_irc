@@ -4,7 +4,6 @@
 Client::Client(const int& fd)
 {
 	this->fd = fd;
-	this->isop = false;
 	this->isAuth = false;
 }
 
@@ -36,12 +35,6 @@ void Client::setRealname(const std::string& realname)
 void Client::setServername(const std::string& servername)
 {
 	this->servername = servername;
-}
-
-
-void Client::setIsop(const bool& isop)
-{
-	this->isop = isop;
 }
 
 int Client::getFd() const
@@ -90,11 +83,6 @@ void Client::partChannel(const std::string& channel)
 	std::vector<std::string>::iterator it = std::find(joined_channels.begin(), joined_channels.end(), channel);
 	if (it != joined_channels.end())
 		joined_channels.erase(it);
-}
-
-bool Client::getIsop() const
-{
-	return (this->isop);
 }
 
 std::string& Client::getBuffer()

@@ -182,7 +182,7 @@ void Commands::handleJoin(const std::string& raw, Client& client)
 		channels[channelName].setName(channelName);
 		channels[channelName].setInvOnly(false);
 		channels[channelName].setMaxUsers(-1);
-		channels[channelName].addOp(client.getNickname(), client);
+		channels[channelName].addOp(client.getNickname());
 		channelCreated = true;
 	}
 	else
@@ -383,19 +383,31 @@ void Commands::handleModeCommand(const std::string& msg, Client& client)
 			}
 			else if (info.key == "k")
 			{
-				channels[info.channel].setPwd(info.parameters);
+				if (channels[info.channel].getPwd().empty() || !info.status)
+					channels[info.channel].setPwd("");
+				else
+					channels[info.channel].setPwd(info.parameters);
 				noticeMsg = ":" + client.getNickname() + " MODE " + info.channel + " " + (info.status ? "+k" : "-k") + " " + info.parameters + "\r\n";
 			}
 			else if (info.key == "l")
 			{
-				int maxUsers = ft_atoi(info.parameters);
-				channels[info.channel].setMaxUsers(maxUsers);
-				noticeMsg = ":" + client.getNickname() + " MODE " + info.channel + " " + (info.status ? "+l" : "-l") + " " + ft_itoa(maxUsers) + "\r\n";
+				int maxUsers = -1;
+				if (!info.status)
+					channels[info.channel].setMaxUsers(maxUsers);
+				else
+				{
+					maxUsers = ft_atoi(info.parameters);
+					channels[info.channel].setMaxUsers(maxUsers);
+				}
+				noticeMsg = ":" + client.getNickname() + " MODE " + info.channel + " " + (info.status ? "+l" : "-l") + " " + (maxUsers == -1 ? "" : ft_itoa(maxUsers)) + "\r\n";
 			}
 			else if (info.key == "o")
 			{
-				channels[info.channel].addOp(info.parameters, client);
-				client.setIsop(true);
+				if (info.status)
+					channels[info.channel].addOp(info.parameters);
+				else
+					channels[info.channel].removeOp(info.parameters);
+				noticeMsg = ":" + client.getNickname() + " MODE " + info.channel + " " + (info.status ? "+o" : "-o") + " " + info.parameters + "\r\n";
 			}
 			else if (info.key == "t")
 			{

@@ -14,7 +14,7 @@ class Channel
 			std::string				name;
 			std::string				pwd;
 			std::string				topic;
-		std::vector<Client>		users;
+		std::vector<Client>			users;
 		std::vector<std::string>	ops;
 		std::vector<std::string>	invitedUsers;
 		bool						invOnly;
@@ -40,8 +40,9 @@ class Channel
 			std::string getTopic() const;
 			std::vector<std::string> getInvitedUsers() const;
 			void addUser(const Client& user);
-			void addOp(const std::string& op, const Client& source);
+			void addOp(const std::string& op);
 			void removeUser(const Client& user);
+			void removeOp(const std::string& op);
 			std::vector<Client>& getUsers();
 
 };
