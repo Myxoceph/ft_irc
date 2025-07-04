@@ -58,14 +58,12 @@ void Commands::executeCommand(const std::string& raw, Client& client)
 	parseInfo info = Parser::parse(raw);
 	std::string cmd = info.command;
 
-	// Handle PASS command separately due to special authentication logic
 	if (cmd == "PASS")
 	{
 		handlePass(raw, client);
 		return;
 	}
 
-	// Check if client is authenticated
 	if (!client.getIsAuth())
 	{
 		std::string err = "451 :You have not registered\r\n";
@@ -73,7 +71,6 @@ void Commands::executeCommand(const std::string& raw, Client& client)
 		return;
 	}
 
-	// Handle registration commands (USER, NICK) when client info is not complete
 	if (!client.isProvided())
 	{
 		if (cmd == "USER")
@@ -88,7 +85,6 @@ void Commands::executeCommand(const std::string& raw, Client& client)
 		return;
 	}
 
-	// Use function pointer map for authenticated users with complete info
 	std::map<std::string, CommandHandler>::iterator it = commandHandlers.find(cmd);
 	if (it != commandHandlers.end())
 	{
@@ -99,10 +95,6 @@ void Commands::executeCommand(const std::string& raw, Client& client)
 		std::cout << "Unknown command: " << cmd << std::endl;
 	}
 }
-
-// ============================================================================
-// AUTHENTICATION AND USER MANAGEMENT COMMANDS
-// ============================================================================
 
 void Commands::handlePass(const std::string& message, Client& client)
 {
@@ -165,10 +157,6 @@ void Commands::handleNickCommand(const std::string& nick, Client& client)
 	send(client.getFd(), welcomeMsg.c_str(), welcomeMsg.size(), 0);
 }
 
-// ============================================================================
-// UTILITY FUNCTIONS FOR COMMANDS
-// ============================================================================
-
 bool Commands::isOP(const std::string& channelName, const Client& client)
 {
 	std::map<std::string, Channel>::iterator it = channels.find(channelName);
@@ -179,10 +167,6 @@ bool Commands::isOP(const std::string& channelName, const Client& client)
 	}
 	return false;
 }
-
-// ============================================================================
-// CHANNEL MANAGEMENT COMMANDS
-// ============================================================================
 
 void Commands::handleJoin(const std::string& raw, Client& client)
 {
@@ -233,7 +217,7 @@ void Commands::handleJoin(const std::string& raw, Client& client)
 		}
 	}
 	channels[channelName].addUser(client);
-	std::string joinMsg = ":" + client.getNickname() + "!" + client.getUsername() + "@" + client.getHostname() + " JOIN :" + channelName + "\r\n";
+	std::string joinMsg = ":" + client.getNickname() + "!" + client.getUsername() + client.getHostname() + " JOIN :" + channelName + "\r\n";
 	for (std::vector<Client>::iterator it = channels[channelName].getUsers().begin(); it != channels[channelName].getUsers().end(); ++it)
 		send(it->getFd(), joinMsg.c_str(), joinMsg.length(), 0);
 
@@ -321,9 +305,18 @@ void Commands::handleTopicCommand(const std::string& msg, Client& client)
 	}
 	else
 	{
-		std::string topicSetMsg = "The topic for " + channelName + " has been set to: " + words[2].substr(1) + "\r\n";
+		std::string topicSetMsg = "The topic for " + channelName + " has been set to: ";
+		std::string topicHandled;
+		words[2].erase(0, 1);
+		for(size_t i = 2; i < words.size(); ++i)
+		{
+			if (i > 2)
+				topicHandled += " ";
+			topicHandled += words[i];
+		}
+		topicSetMsg += topicHandled + "\r\n";
 		send(client.getFd(), topicSetMsg.c_str(), topicSetMsg.size(), 0);
-		channels[channelName].setTopic(words[2].substr(1));
+		channels[channelName].setTopic(topicHandled);
 	}
 	std::string topic = channels[channelName].getTopic();
 	std::string topicSetBy = client.getNickname();
@@ -356,7 +349,6 @@ void Commands::handleModeCommand(const std::string& msg, Client& client)
 		if (modes.empty())
 			return;
 		std::string noticeMsg = ":" + client.getNickname() + " NOTICE " + client.getNickname() + " Current modes in " + info.channel + " are: +" + modes;
-		//std::string err = ":" + client.getNickname() + " NOTICE " + client.getNickname() + " :Can't kick yourself lil bro 😭\r\n";
 		if (modes.find('k') != std::string::npos)
 			noticeMsg += " " + channels[info.channel].getPwd();
 		if (modes.find('l') != std::string::npos)
@@ -365,12 +357,6 @@ void Commands::handleModeCommand(const std::string& msg, Client& client)
 		std::cout << "Sending mode notice: " << noticeMsg << std::endl;
 		send(client.getFd(), noticeMsg.c_str(), noticeMsg.size(), 0);
 		return;
-		// std::string noticeMsg = ":server MODE " + info.channel + " + " +
-		// 	(channels[info.channel].getInvOnly() ? "i" : "") + 
-		// 	(channels[info.channel].getPwd().empty() ? "" : "k") +
-		// 	(channels[info.channel].getMaxUsers() == -1 ? "" : "l") + "\r\n";
-		// send(client.getFd(), noticeMsg.c_str(), noticeMsg.size(), 0);
-		// return;
 	}
 	if (isOP(channels[info.channel].getName(), client) == false)
 	{
@@ -393,18 +379,18 @@ void Commands::handleModeCommand(const std::string& msg, Client& client)
 					channels[info.channel].setInvOnly(info.status);
 				else
 					channels[info.channel].setInvOnly(0);
-				noticeMsg = ":server MODE " + info.channel + " " + (info.status ? "+i" : "-i") + "\r\n";
+				noticeMsg = ":" + client.getNickname() + " MODE " + info.channel + " " + (info.status ? "+i" : "-i") + "\r\n";
 			}
 			else if (info.key == "k")
 			{
 				channels[info.channel].setPwd(info.parameters);
-				noticeMsg = ":server MODE " + info.channel + " " + (info.status ? "+k" : "-k") + " " + info.parameters + "\r\n";
+				noticeMsg = ":" + client.getNickname() + " MODE " + info.channel + " " + (info.status ? "+k" : "-k") + " " + info.parameters + "\r\n";
 			}
 			else if (info.key == "l")
 			{
 				int maxUsers = ft_atoi(info.parameters);
 				channels[info.channel].setMaxUsers(maxUsers);
-				noticeMsg = ":server MODE " + info.channel + " " + (info.status ? "+l" : "-l") + " " + ft_itoa(maxUsers) + "\r\n";
+				noticeMsg = ":" + client.getNickname() + " MODE " + info.channel + " " + (info.status ? "+l" : "-l") + " " + ft_itoa(maxUsers) + "\r\n";
 			}
 			else if (info.key == "o")
 			{
@@ -414,7 +400,7 @@ void Commands::handleModeCommand(const std::string& msg, Client& client)
 			else if (info.key == "t")
 			{
 				channels[info.channel].setTopic(info.parameters);
-				noticeMsg = ":server MODE " + info.channel + " " + (info.status ? "+t" : "-t") + "\r\n";
+				noticeMsg = ":" + client.getNickname() + " MODE " + info.channel + " " + (info.status ? "+t" : "-t") + "\r\n";
 			}
 			else
 			{
@@ -423,10 +409,7 @@ void Commands::handleModeCommand(const std::string& msg, Client& client)
 				return;
 			}
 			for (std::vector<Client>::iterator user = channels[info.channel].getUsers().begin(); user != channels[info.channel].getUsers().end(); ++user)
-			{
-				std::string formattedNotice = noticeMsg + "\r\n";
-				send(user->getFd(), formattedNotice.c_str(), formattedNotice.size(), 0);
-			}
+				send(user->getFd(), noticeMsg.c_str(), noticeMsg.size(), 0);
 			return;
 		}
 		++it;
@@ -434,10 +417,6 @@ void Commands::handleModeCommand(const std::string& msg, Client& client)
 	std::string err = "482 " + client.getNickname() + " " + info.channel + " :You're not channel operator\r\n";
 	send(client.getFd(), err.c_str(), err.size(), 0);
 }
-
-// ============================================================================
-// MESSAGING COMMANDS
-// ============================================================================
 
 void Commands::handlePrivmsg(const std::string& message, Client& sender)
 {
@@ -473,10 +452,6 @@ void Commands::handlePrivmsg(const std::string& message, Client& sender)
 	std::string err = "401 " + sender.getNickname() + " " + info.target + " :No such nick/channel\r\n";
 	send(sender.getFd(), err.c_str(), err.size(), 0);
 }
-
-// ============================================================================
-// ADMINISTRATIVE COMMANDS
-// ============================================================================
 
 void Commands::handleKickCommand(const std::string& msg, Client& client)
 {
