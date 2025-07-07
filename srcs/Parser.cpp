@@ -89,7 +89,7 @@ parseInfo Parser::parse(std::string message) {
 userInfo Parser::userParse(std::string message) {
 	userInfo user;
 	std::vector<std::string> words = split(message);
-	if (words.size() < 4)
+	if (words.size() < 5 || words[4][0] != ':')
 	{
 		user.userName = "";
 		user.realName = "";

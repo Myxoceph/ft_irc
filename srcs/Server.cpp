@@ -10,7 +10,12 @@ Server::Server(const std::string& port, const std::string& pwd)
 
 Server::~Server()
 {
-
+	for (std::map<int, Client>::const_iterator it = clients.begin(); it != clients.end(); ++it)
+		close(it->first);
+	close(server_fd);
+	clients.clear();
+	fds.clear();
+	channels.clear();
 }
 
 void Server::run()
@@ -115,7 +120,6 @@ void Server::handleClientMessage(Client& client, std::string& msg)
 	}
 }
 
-
 void Server::initServer(const std::string& port)
 {
 	int opt;
@@ -146,24 +150,3 @@ void Server::initServer(const std::string& port)
 	server_pollfd.events = POLLIN;
 	fds.push_back(server_pollfd);
 }
-
-// void Server::initCmds()
-// {
-// 	usrCmds["PASS"];
-// 	usrCmds["NICK"];
-// 	usrCmds["USER"];
-// 	usrCmds["CREATE"];
-// 	usrCmds["JOIN"];
-// 	usrCmds["QUIT"];
-
-// 	chCmds["DELETE"];
-// 	chCmds["LEAVE"];
-// 	chCmds["ADDOP"];
-// 	chCmds["KICK"];
-// 	chCmds["LSTMEMBERS"];
-
-// 	cmds["PRIVMSG"];
-// 	cmds["PING"];
-// 	cmds["LIST"];
-// 	cmds["HELP"];
-// }

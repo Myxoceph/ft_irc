@@ -9,6 +9,7 @@ Channel::Channel()
 	this->invOnly = false;
 	this->maxUsers = -1;
 	this->topic = "The topic has not been set yet.";
+	this->topicSet = true;
 }
 
 Channel::Channel(const std::string& name)
@@ -18,11 +19,17 @@ Channel::Channel(const std::string& name)
 	this->invOnly = false;
 	this->maxUsers = -1;
 	this->topic = "The topic has not been set yet.";
+	this->topicSet = true;
 }
 
 Channel::~Channel()
 {
-
+	users.clear();
+	ops.clear();
+	invitedUsers.clear();
+	this->name.clear();
+	this->pwd.clear();
+	this->topic.clear();
 }
 
 void Channel::setName(const std::string& name)
@@ -73,15 +80,9 @@ std::string Channel::getPwd() const
 void Channel::addUser(const Client& user)
 {
 	for (std::vector<Client>::iterator it = users.begin(); it != users.end(); ++it)
-	{
 		if (it->getNickname() == user.getNickname())
-		{
-			std::cout << "User " << user.getNickname() << " is already in the channel " << this->name << std::endl;
 			return;
-		}
-	}
 	users.push_back(user);
-	std::cout << "User " << user.getNickname() << " added to channel " << this->name << std::endl;
 }
 
 
@@ -129,14 +130,7 @@ std::vector<std::string> Channel::getInvitedUsers() const
 void Channel::addinvitedUser(const std::string& user)
 {
 	if (std::find(invitedUsers.begin(), invitedUsers.end(), user) == invitedUsers.end())
-	{
 		invitedUsers.push_back(user);
-		std::cout << "User " << user << " added to the invited list of channel " << this->name << std::endl;
-	}
-	else
-	{
-		std::cout << "User " << user << " is already in the invited list of channel " << this->name << std::endl;
-	}
 }
 
 bool Channel::isOp(const std::string &nickName) const
@@ -170,4 +164,12 @@ void Channel::removeOp(const std::string& op)
 		send(user->getFd(), ModeMsg.c_str(), ModeMsg.size(), 0);
 }
 
-// op issue somewhat fixed. need to handle part and kick too.
+bool Channel::getTopicSet() const
+{
+	return this->topicSet;
+}
+
+void Channel::setTopicSet(const bool& topicSet)
+{
+	this->topicSet = topicSet;
+}

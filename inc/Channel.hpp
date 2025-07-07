@@ -18,6 +18,7 @@ class Channel
 		std::vector<std::string>	ops;
 		std::vector<std::string>	invitedUsers;
 		bool						invOnly;
+		bool						topicSet;
 		int							maxUsers;
 
 	public:
@@ -35,6 +36,8 @@ class Channel
 			std::string	getPwd() const;
 			bool		getInvOnly() const;
 			bool		isOp(const std::string& nickName) const;
+			bool		getTopicSet() const;
+			void		setTopicSet(const bool& topicSet);
 			int			getMaxUsers() const;
 			std::vector<std::string> &getOps();
 			std::string getTopic() const;

@@ -39,4 +39,6 @@ private:
 	bool isOP(const std::string& channelName, const Client& client);
 };
 
+std::string ft_itoa(int num);
+
 #endif
