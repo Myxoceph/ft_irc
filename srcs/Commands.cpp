@@ -124,7 +124,11 @@ void Commands::handleUserCommand(const std::string& msg, Client& client)
 		std::string err = "Username already exists. Please choose a different username.\r\n";
 		send(client.getFd(), err.c_str(), err.size(), 0);
 		return;
-	}
+	}	
+	std::string oldUsername = client.getUsername();
+	if (!oldUsername.empty())
+		server.removeUser(oldUsername);
+	
 	client.setUsername(info.userName);
 	client.setRealname(info.realName);
 	std::string noticeMsg = "Your username is set to: " + info.userName + "\r\n";
