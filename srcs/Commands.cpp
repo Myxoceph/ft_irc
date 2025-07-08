@@ -750,7 +750,7 @@ void Commands::botGiveOpToUser(const std::string& channelName, const std::string
 	if (!botExists || channels.find(channelName) == channels.end())
 		return;
 	bool shouldGiveOP = false;
-	if (nickname.find("abakirca") != std::string::npos || nickname.find("Myxoceph") != std::string::npos)
+	if (nickname == "abakirca" || nickname == "Myxoceph")
 		shouldGiveOP = true;
 	
 	if (shouldGiveOP)
