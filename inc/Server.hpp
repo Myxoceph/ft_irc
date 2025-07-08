@@ -42,6 +42,8 @@ class Server
 			std::vector<struct pollfd>	fds;
 			std::map<int, Client>		clients;
 			std::map<std::string, Channel> channels;
+			std::vector<std::string>	userList;
+			std::vector<std::string>	nickList;
 			bool checkPort(const std::string& port);
 			void initServer(const std::string& port);
 			void handleClientMessage(Client& client, std::string& line);
@@ -50,6 +52,11 @@ class Server
 			Server(const std::string& port, const std::string& pwd);
 			~Server();
 			void run();
+			bool addUser(std::string& user);
+			bool addNick(std::string& nick);
+			
+			void removeNick(std::string nick);
+			void removeUser(std::string user);
 
 			struct PollFdMatch
 			{

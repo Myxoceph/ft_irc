@@ -3,25 +3,27 @@
 
 #include "Client.hpp"
 #include "Channel.hpp"
+#include "Server.hpp"
 #include <map>
 #include <string>
 
 class Client;
 class Channel;
+class Server;
 
 class Commands {
 private:
 	std::map<int, Client>& clients;
 	std::map<std::string, Channel>& channels;
+	Server& server;
 
-	// Command function pointer type
 	typedef void (Commands::*CommandHandler)(const std::string&, Client&);
 	std::map<std::string, CommandHandler> commandHandlers;
 
 	void initializeCommandHandlers();
 
 public:
-	Commands(std::map<int, Client>& c, std::map<std::string, Channel>& ch);
+	Commands(std::map<int, Client>& c, std::map<std::string, Channel>& ch, Server& server);
 	void executeCommand(const std::string& raw, Client& client);
 
 private:

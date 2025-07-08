@@ -20,8 +20,8 @@ std::string ft_itoa(int num)
 	return ss.str();
 }
 
-Commands::Commands(std::map<int, Client>& c, std::map<std::string, Channel>& ch)
-	: clients(c), channels(ch) 
+Commands::Commands(std::map<int, Client>& c, std::map<std::string, Channel>& ch, Server& server)
+	: clients(c), channels(ch), server(server)
 {
 	initializeCommandHandlers();
 }
@@ -119,6 +119,12 @@ void Commands::handleUserCommand(const std::string& msg, Client& client)
 		send(client.getFd(), err.c_str(), err.size(), 0);
 		return;
 	}
+	if (server.addUser(info.userName) == false)
+	{
+		std::string err = "Username already exists. Please choose a different username.\r\n";
+		send(client.getFd(), err.c_str(), err.size(), 0);
+		return;
+	}
 	client.setUsername(info.userName);
 	client.setRealname(info.realName);
 	std::string noticeMsg = "Your username is set to: " + info.userName + "\r\n";
@@ -137,8 +143,36 @@ void Commands::handleNickCommand(const std::string& nick, Client& client)
 		send(client.getFd(), err.c_str(), err.size(), 0);
 		return;
 	}
-	std::string welcomeMsg = ":" + client.getNickname() + " NICK " + cmd + "\r\n";
-	send(client.getFd(), welcomeMsg.c_str(), welcomeMsg.size(), 0);
+	if (server.addNick(cmd) == false)
+	{
+		std::string err = "Nickname already exists. Please choose a different nickname.\r\n";
+		send(client.getFd(), err.c_str(), err.size(), 0);
+		return;
+	}
+	std::string msg = ":" + client.getNickname() + " NICK :" + cmd + "\r\n";
+	send(client.getFd(), msg.c_str(), msg.size(), 0);
+	std::vector<std::string> channelsList = client.getJoinedChannels();
+	std::vector<std::string>::iterator it = channelsList.begin();
+	std::vector<std::string>::iterator ite = channelsList.end();
+	while(it != ite)
+	{
+		std::string channelName = *it;
+		if (channels.find(channelName) != channels.end())
+		{
+			std::vector<Client>& users = channels[channelName].getUsers();
+			for (std::vector<Client>::iterator userIt = users.begin(); userIt != users.end(); ++userIt)
+			{
+				if (userIt->getFd() != client.getFd())
+				{
+					std::string msgToUser = ":" + client.getNickname() + " NICK :" + cmd + "\r\n";
+					send(userIt->getFd(), msgToUser.c_str(), msgToUser.size(), 0);
+				}
+			}
+		}
+		it++;
+	}
+	server.removeNick(client.getNickname());
+	server.addNick(cmd);
 	client.setNickname(cmd);
 }
 

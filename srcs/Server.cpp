@@ -81,6 +81,8 @@ void Server::run()
 				if (n == 0)
 				{
 					std::cout << "Client disconnected: fd = " << fds[i].fd << std::endl;
+					removeUser(clients.at(fds[i].fd).getUsername());
+					removeNick(clients.at(fds[i].fd).getNickname());
 					close(fds[i].fd);
 					fds.erase(fds.begin() + i);
 					--i;
@@ -115,7 +117,7 @@ void Server::handleClientMessage(Client& client, std::string& msg)
 	{
 		std::string line = buffer.substr(0, pos);
 		buffer.erase(pos, pos + 2);
-		Commands commands(clients, channels);
+		Commands commands(clients, channels, *this);
 		commands.executeCommand(line, client);
 	}
 }
@@ -149,4 +151,34 @@ void Server::initServer(const std::string& port)
 	server_pollfd.fd = server_fd;
 	server_pollfd.events = POLLIN;
 	fds.push_back(server_pollfd);
+}
+
+bool Server::addUser(std::string& user)
+{
+	if (std::find(userList.begin(), userList.end(), user) != userList.end())
+		return false;
+	userList.push_back(user);
+	return true;
+}
+
+bool Server::addNick(std::string& nick)
+{
+	if (std::find(nickList.begin(), nickList.end(), nick) != nickList.end())
+		return false;
+	nickList.push_back(nick);
+	return true;
+}
+
+void Server::removeUser(std::string user)
+{
+	std::vector<std::string>::iterator it = std::find(userList.begin(), userList.end(), user);
+	if (it != userList.end())
+		userList.erase(it);
+}
+
+void Server::removeNick(std::string nick)
+{
+	std::vector<std::string>::iterator it = std::find(nickList.begin(), nickList.end(), nick);
+	if (it != nickList.end())
+		nickList.erase(it);
 }
