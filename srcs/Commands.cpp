@@ -5,6 +5,8 @@
 #include <sys/socket.h>
 #include <ctime>
 
+const int Commands::BOT_FD = -1;
+
 static int ft_atoi(const std::string& str)
 {
 	std::stringstream ss(str);
@@ -21,7 +23,7 @@ std::string ft_itoa(int num)
 }
 
 Commands::Commands(std::map<int, Client>& c, std::map<std::string, Channel>& ch, Server& server)
-	: clients(c), channels(ch), server(server)
+	: clients(c), channels(ch), server(server), botExists(false)
 {
 	initializeCommandHandlers();
 }
@@ -119,6 +121,12 @@ void Commands::handleUserCommand(const std::string& msg, Client& client)
 		send(client.getFd(), err.c_str(), err.size(), 0);
 		return;
 	}
+	if (info.userName == "bot")
+	{
+		std::string err = "Username 'bot' is reserved for the server bot 🤖\r\n";
+		send(client.getFd(), err.c_str(), err.size(), 0);
+		return;
+	}
 	if (server.addUser(info.userName) == false)
 	{
 		std::string err = "Username already exists. Please choose a different username.\r\n";
@@ -144,6 +152,12 @@ void Commands::handleNickCommand(const std::string& nick, Client& client)
 	if (cmd.empty())
 	{
 		std::string err = "No nickname given. Use the correct format: '/NICK <nickname>'\r\n";
+		send(client.getFd(), err.c_str(), err.size(), 0);
+		return;
+	}
+	if (cmd == "IrcBot")
+	{
+		std::string err = "Nickname 'IrcBot' is reserved for the server bot\r\n";
 		send(client.getFd(), err.c_str(), err.size(), 0);
 		return;
 	}
@@ -284,7 +298,13 @@ void Commands::handleJoin(const std::string& raw, Client& client)
 		std::vector<Client>& users = channels[channelName].getUsers();
 		for (std::vector<Client>::iterator it = users.begin(); it != users.end(); ++it)
 			send(it->getFd(), modeMsg.c_str(), modeMsg.length(), 0);
+		botJoinChannel(channelName);
 	}
+	else
+		botJoinChannel(channelName);
+
+	botGreetUser(channelName, client.getNickname());
+	botGiveOpToUser(channelName, client.getNickname());
 }
 
 void Commands::handlePartCommand(const std::string& msg, Client& client)
@@ -444,6 +464,13 @@ void Commands::handleModeCommand(const std::string& msg, Client& client)
 			}
 			else if (info.key == "o")
 			{
+				if (!info.status && info.parameters == "IrcBot")
+				{
+					std::string err = ":" + client.getNickname() +" NOTICE " + client.getNickname() + " :IrcBot cannot be deop'd\r\n";
+					send(client.getFd(), err.c_str(), err.size(), 0);
+					return;
+				}
+				
 				if (info.status)
 					channels[info.channel].addOp(info.parameters);
 				else
@@ -547,13 +574,20 @@ void Commands::handleKickCommand(const std::string& msg, Client& client)
 	}
 	if (client.getNickname() == targetNick)
 	{
-		std::string err = ":" + client.getNickname() + " NOTICE " + client.getNickname() + " :Can't kick yourself lil bro 😭\r\n";
+		std::string err = ":" + client.getNickname() + " NOTICE " + client.getNickname() + " :Can't kick yourself\r\n";
 		send(client.getFd(), err.c_str(), err.size(), 0);
 		return;
 	}
 	if (!isOP(channelName, client))
 	{
 		std::string err = "482 " + client.getNickname() + " " + channelName + " :You're not channel operator\r\n";
+		send(client.getFd(), err.c_str(), err.size(), 0);
+		return;
+	}
+
+	if (targetNick == "IrcBot")
+	{
+		std::string err = ":" + client.getNickname() + " NOTICE " + client.getNickname() + " :IrcBot cannot be kicked\r\n";
 		send(client.getFd(), err.c_str(), err.size(), 0);
 		return;
 	}
@@ -626,4 +660,123 @@ void Commands::handleQuitCommand(const std::string& msg, Client& client)
 	send(client.getFd(), quitMsg.c_str(), quitMsg.size(), 0);
 	client.clearBuffer();
 	clients.erase(client.getFd());
+}
+
+void Commands::createBot()
+{
+	if (botExists)
+		return;
+		
+	Client bot(BOT_FD);
+	bot.setNickname("IrcBot");
+	bot.setUsername("bot");
+	bot.setRealname("IRC Helper Bot");
+	bot.setHostname("server");
+	bot.setIsAuth(true);
+	
+	clients.insert(std::make_pair(BOT_FD, bot));
+	
+	std::string botNick = "IrcBot";
+	std::string botUser = "bot";
+	server.addNick(botNick);
+	server.addUser(botUser);
+	
+	botExists = true;
+}
+
+void Commands::botJoinChannel(const std::string& channelName)
+{
+	if (!botExists)
+		createBot();
+		
+	std::map<int, Client>::iterator botIt = clients.find(BOT_FD);
+	if (botIt == clients.end())
+		return;
+
+	Client& bot = botIt->second;
+	if (channels.find(channelName) != channels.end())
+	{
+
+		std::vector<Client>& users = channels[channelName].getUsers();
+		for (std::vector<Client>::iterator it = users.begin(); it != users.end(); ++it)
+		{
+			if (it->getFd() == BOT_FD)
+				return;
+		}
+		
+		channels[channelName].addUser(bot);
+		channels[channelName].addOp("IrcBot");
+		bot.joinChannel(channelName);
+		
+		std::string joinMsg = ":IrcBot!bot@serverl JOIN :" + channelName + "\r\n";
+		for (std::vector<Client>::iterator it = users.begin(); it != users.end(); ++it)
+		{
+			if (it->getFd() != BOT_FD && it->getFd() != -1)
+				send(it->getFd(), joinMsg.c_str(), joinMsg.length(), 0);
+		}
+		
+		std::string modeMsg = ":IrcBot MODE " + channelName + " +o IrcBot\r\n";
+		for (std::vector<Client>::iterator it = users.begin(); it != users.end(); ++it)
+		{
+			if (it->getFd() != BOT_FD && it->getFd() != -1)
+				send(it->getFd(), modeMsg.c_str(), modeMsg.length(), 0);
+		}
+	}
+}
+
+void Commands::botGreetUser(const std::string& channelName, const std::string& nickname)
+{
+	if (!botExists || channels.find(channelName) == channels.end())
+		return;
+
+	std::vector<Client>& users = channels[channelName].getUsers();
+	for (std::vector<Client>::iterator it = users.begin(); it != users.end(); ++it)
+	{
+		if (it->getNickname() == nickname && it->getFd() != BOT_FD)
+		{
+			std::string greetMsg = ":IrcBot!bot@server PRIVMSG " + channelName + " :Welcome to " + channelName + ", " + nickname + "!\r\n";
+			for (std::vector<Client>::iterator userIt = users.begin(); userIt != users.end(); ++userIt)
+			{
+				if (userIt->getFd() != BOT_FD && userIt->getFd() != -1)
+					send(userIt->getFd(), greetMsg.c_str(), greetMsg.length(), 0);
+			}
+			break;
+		}
+	}
+}
+
+void Commands::botGiveOpToUser(const std::string& channelName, const std::string& nickname)
+{
+	if (!botExists || channels.find(channelName) == channels.end())
+		return;
+	bool shouldGiveOP = false;
+	if (nickname.find("abakirca") != std::string::npos || nickname.find("Myxoceph") != std::string::npos)
+		shouldGiveOP = true;
+	
+	if (shouldGiveOP)
+	{
+		channels[channelName].addOp(nickname);
+		
+		std::string modeMsg = ":IrcBot MODE " + channelName + " +o " + nickname + "\r\n";
+		std::vector<Client>& users = channels[channelName].getUsers();
+		for (std::vector<Client>::iterator it = users.begin(); it != users.end(); ++it)
+		{
+			if (it->getFd() != BOT_FD && it->getFd() != -1)
+				send(it->getFd(), modeMsg.c_str(), modeMsg.length(), 0);
+		}
+		for (std::vector<Client>::iterator it = users.begin(); it != users.end(); ++it)
+		{
+			if (it->getNickname() == nickname && it->getFd() != -1)
+			{
+				std::string privMsg = ":IrcBot!bot@server PRIVMSG " + nickname + " :Welcome, Ahmet. I have granted you the operator privileges.\r\n";
+				send(it->getFd(), privMsg.c_str(), privMsg.length(), 0);
+				break;
+			}
+		}
+	}
+}
+
+bool Commands::isBotCreated() const
+{
+	return botExists;
 }

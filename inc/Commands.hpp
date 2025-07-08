@@ -17,6 +17,9 @@ private:
 	std::map<std::string, Channel>& channels;
 	Server& server;
 
+	static const int BOT_FD; // Special FD for bot (not a real socket)
+	bool botExists;
+
 	typedef void (Commands::*CommandHandler)(const std::string&, Client&);
 	std::map<std::string, CommandHandler> commandHandlers;
 
@@ -39,6 +42,13 @@ private:
 	void handleKickCommand(const std::string& msg, Client& client);
 	void handleInviteCommand(const std::string& msg, Client& client);
 	bool isOP(const std::string& channelName, const Client& client);
+	
+private:
+	void createBot();
+	void botJoinChannel(const std::string& channelName);
+	void botGreetUser(const std::string& channelName, const std::string& nickname);
+	void botGiveOpToUser(const std::string& channelName, const std::string& nickname);
+	bool isBotCreated() const;
 };
 
 std::string ft_itoa(int num);
