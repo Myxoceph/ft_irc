@@ -149,12 +149,13 @@ void Commands::handleNickCommand(const std::string& nick, Client& client)
 		send(client.getFd(), err.c_str(), err.size(), 0);
 		return;
 	}
-	std::string msg = ":" + client.getNickname() + " NICK :" + cmd + "\r\n";
+	
+	std::string oldNickname = client.getNickname();
+	std::string msg = ":" + oldNickname + " NICK :" + cmd + "\r\n";
 	send(client.getFd(), msg.c_str(), msg.size(), 0);
+	
 	std::vector<std::string> channelsList = client.getJoinedChannels();
-	std::vector<std::string>::iterator it = channelsList.begin();
-	std::vector<std::string>::iterator ite = channelsList.end();
-	while(it != ite)
+	for (std::vector<std::string>::iterator it = channelsList.begin(); it != channelsList.end(); ++it)
 	{
 		std::string channelName = *it;
 		if (channels.find(channelName) != channels.end())
@@ -164,15 +165,19 @@ void Commands::handleNickCommand(const std::string& nick, Client& client)
 			{
 				if (userIt->getFd() != client.getFd())
 				{
-					std::string msgToUser = ":" + client.getNickname() + " NICK :" + cmd + "\r\n";
+					std::string msgToUser = ":" + oldNickname + " NICK :" + cmd + "\r\n";
 					send(userIt->getFd(), msgToUser.c_str(), msgToUser.size(), 0);
 				}
 			}
+			if (channels[channelName].isOp(oldNickname))
+			{
+				channels[channelName].removeOp(oldNickname);
+				channels[channelName].addOp(cmd);
+			}
 		}
-		it++;
 	}
-	server.removeNick(client.getNickname());
-	server.addNick(cmd);
+	
+	server.removeNick(oldNickname);
 	client.setNickname(cmd);
 }
 
@@ -246,6 +251,7 @@ void Commands::handleJoin(const std::string& raw, Client& client)
 		}
 	}
 	channels[channelName].addUser(client);
+	client.joinChannel(channelName);
 	std::string joinMsg = ":" + client.getNickname() + "!" + client.getUsername() + client.getHostname() + " JOIN :" + channelName + "\r\n";
 	for (std::vector<Client>::iterator it = channels[channelName].getUsers().begin(); it != channels[channelName].getUsers().end(); ++it)
 		send(it->getFd(), joinMsg.c_str(), joinMsg.length(), 0);
@@ -298,6 +304,7 @@ void Commands::handlePartCommand(const std::string& msg, Client& client)
 		send(it->getFd(), noticeMsg.c_str(), noticeMsg.size(), 0);
 	channels[channelName].removeUser(client);
 	channels[channelName].removeOp(client.getNickname());
+	client.partChannel(channelName);
 	if (channels[channelName].getUsers().empty())
 		channels.erase(channelName);
 }
@@ -553,6 +560,16 @@ void Commands::handleKickCommand(const std::string& msg, Client& client)
 			std::string noticeMsg = ":" + client.getNickname() + "!" + client.getUsername() + "@" + client.getHostname() + " KICK " + channelName + " " + targetNick + "\r\n";
 			for (std::vector<Client>::iterator it = channels[channelName].getUsers().begin(); it != channels[channelName].getUsers().end(); ++it)
 				send(it->getFd(), noticeMsg.c_str(), noticeMsg.size(), 0);
+
+			for (std::map<int, Client>::iterator clientIt = clients.begin(); clientIt != clients.end(); ++clientIt)
+			{
+				if (clientIt->second.getNickname() == targetNick)
+				{
+					clientIt->second.partChannel(channelName);
+					break;
+				}
+			}
+			
 			channels[channelName].removeUser(*it);
 			channels[channelName].removeOp(targetNick);
 			return;
