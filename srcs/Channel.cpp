@@ -9,7 +9,7 @@ Channel::Channel()
 	this->invOnly = false;
 	this->maxUsers = -1;
 	this->topic = "The topic has not been set yet.";
-	this->topicSet = true;
+	this->topicSet = false;
 }
 
 Channel::Channel(const std::string& name)
@@ -19,7 +19,7 @@ Channel::Channel(const std::string& name)
 	this->invOnly = false;
 	this->maxUsers = -1;
 	this->topic = "The topic has not been set yet.";
-	this->topicSet = true;
+	this->topicSet = false;
 }
 
 Channel::~Channel()
@@ -94,7 +94,6 @@ void Channel::removeUser(const Client& user)
 	{
 		if (it->getNickname() == user.getNickname())
 		{
-			std::cout << "User " << it->getNickname() << " removed from channel " << this->name << std::endl;
 			users.erase(it);
 			return;
 		}
