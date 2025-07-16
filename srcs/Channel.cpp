@@ -142,22 +142,28 @@ void Channel::removeOp(const std::string& op)
 	std::vector<std::string>::iterator it = std::find(ops.begin(), ops.end(), op);
 	if (it == ops.end())
 		return;
-	ops.erase(it);
 
+	ops.erase(it);
 	if (!ops.empty())
 		return;
+
 	std::vector<Client> newlist = users;
-	for (std::vector<Client>::iterator iter = newlist.begin(); iter != newlist.end(); ++iter) {
-		if (iter->getNickname() == op) {
+	for (std::vector<Client>::iterator iter = newlist.begin(); iter != newlist.end(); ++iter)
+	{
+		if (iter->getNickname() == op)
+		{
 			newlist.erase(iter);
 			break;
 		}
 	}
+
 	if (newlist.empty())
 		return;
+
 	Client& newOpClient = newlist[rand() % newlist.size()];
 	std::string newOp = newOpClient.getNickname();
 	ops.push_back(newOp);
+
 	std::string ModeMsg = ":Server MODE " + this->name + " +o " + newOp + "\r\n";
 	for (std::vector<Client>::iterator user = users.begin(); user != users.end(); ++user)
 		send(user->getFd(), ModeMsg.c_str(), ModeMsg.size(), 0);
@@ -171,4 +177,17 @@ bool Channel::getTopicSet() const
 void Channel::setTopicSet(const bool& topicSet)
 {
 	this->topicSet = topicSet;
+}
+
+bool Channel::isUserInChannel(const std::string &check) const
+{
+	std::vector<Client>::const_iterator it = users.begin();
+	std::vector<Client>::const_iterator ite = users.end();
+	while (it != ite)
+	{
+		if (it->getNickname() == check)
+			return true;
+		++it;
+	}
+	return false;
 }

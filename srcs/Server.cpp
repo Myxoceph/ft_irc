@@ -35,6 +35,7 @@ void Server::run()
 
 			if (fcntl(client_fd, F_SETFL, O_NONBLOCK) == -1)
 				throw std::runtime_error(RED"Error setting non-blocking mode: " + std::string(strerror(errno)) + RESET);
+
 			clients.insert(std::make_pair(client_fd, Client(client_fd)));
 
 			struct pollfd client_pollfd;
@@ -61,12 +62,11 @@ void Server::run()
 			if (fds[i].revents & POLLIN)
 			{
 				char buffer[1024];
-				ssize_t n;
 
+				ssize_t n;
 				while ((n = read(fds[i].fd, buffer, sizeof(buffer) - 1)) > 0)
 				{
 					buffer[n] = '\0';
-
 					Client& client = clients.at(fds[i].fd);
 					client.appendToBuffer(buffer);
 					client.setPwd(pwd);
@@ -98,20 +98,21 @@ void Server::run()
 bool Server::checkPort(const std::string& port)
 {
 	for (size_t i = 0; i < port.size(); i++)
-	{
 		if (!std::isdigit(port[i]))
 			return (false);
-	}
+
 	if (port.size() > 5)
 		return (false);
 	else if (std::strtol(port.c_str(), NULL, 10) <= 0 || std::strtol(port.c_str(), NULL, 10) > 65535)
 		return (false);
+
 	return (true);
 }
 
 void Server::handleClientMessage(Client& client, std::string& msg)
 {
 	std::string &buffer = msg;
+
 	size_t pos;
 	while ((pos = buffer.find("\r\n")) != std::string::npos)
 	{
@@ -157,6 +158,7 @@ bool Server::addUser(std::string& user)
 {
 	if (std::find(userList.begin(), userList.end(), user) != userList.end())
 		return false;
+
 	userList.push_back(user);
 	return true;
 }
@@ -165,6 +167,7 @@ bool Server::addNick(std::string& nick)
 {
 	if (std::find(nickList.begin(), nickList.end(), nick) != nickList.end())
 		return false;
+
 	nickList.push_back(nick);
 	return true;
 }

@@ -5,7 +5,8 @@
 #include <sstream>
 #include <vector>
 
-struct userInfo {
+struct userInfo
+{
 	std::string userName;
 	std::string realName;
 };

@@ -30,11 +30,11 @@ class Client
 			std::string	getRealname() const;
 			std::string	getServername() const;
 			std::string	getPwd() const;
-			bool		hasFullMessage(std::string& out);
 			bool		getIsAuth() const;
 			bool		isProvided() const;
-			std::string	&getBuffer();
 
+			bool		hasFullMessage(std::string& out);
+			std::string	&getBuffer();
 			void 		appendToBuffer(const std::string& buffer);
 			void 		clearBuffer();
 
@@ -50,6 +50,5 @@ class Client
 			void		partChannel(const std::string& channel);
 			const std::vector<std::string>& getJoinedChannels() const;
 };
-
 
 #endif

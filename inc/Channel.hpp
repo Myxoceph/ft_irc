@@ -11,9 +11,9 @@ class Client;
 class Channel
 {
 	private:
-			std::string				name;
-			std::string				pwd;
-			std::string				topic;
+		std::string					name;
+		std::string					pwd;
+		std::string					topic;
 		std::vector<Client>			users;
 		std::vector<std::string>	ops;
 		std::vector<std::string>	invitedUsers;
@@ -30,24 +30,25 @@ class Channel
 			void setInvOnly(const bool& invOnly);
 			void setMaxUsers(const int& maxUsers);
 			void setTopic(const std::string& topic);
-			void addinvitedUser(const std::string& user);
-
+			
 			std::string	getName() const;
 			std::string	getPwd() const;
 			bool		getInvOnly() const;
 			bool		isOp(const std::string& nickName) const;
+			bool		isUserInChannel(const std::string &check) const;
 			bool		getTopicSet() const;
 			void		setTopicSet(const bool& topicSet);
 			int			getMaxUsers() const;
 			std::vector<std::string> &getOps();
 			std::string getTopic() const;
 			std::vector<std::string> getInvitedUsers() const;
+			std::vector<Client>& getUsers();
+			
+			void addinvitedUser(const std::string& user);
 			void addUser(const Client& user);
 			void addOp(const std::string& op);
 			void removeUser(const Client& user);
 			void removeOp(const std::string& op);
-			std::vector<Client>& getUsers();
-
 };
 
 #endif
