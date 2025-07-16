@@ -7,6 +7,11 @@
 
 const int Commands::BOT_FD = -1;
 
+// When someone changes nick on the server, we need to remove the old nick from the nickList
+// /JOIN asd still works, it shouldnt.
+// when sending a message, chatbox doesnt appear.
+// 
+
 static int ft_atoi(const std::string& str)
 {
 	std::stringstream ss(str);
