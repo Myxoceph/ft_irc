@@ -266,12 +266,14 @@ void Commands::handleJoin(const std::string& raw, Client& client)
 				channels[channelName].getInvitedUsers().erase(toDel);
 			}
 		}
-
-		if (channels[channelName].getPwd() != "" && info.value != channels[channelName].getPwd())
+		if (channels[channelName].getPwd() != "")
 		{
-			std::string err = ":server 475 " + client.getNickname() + " " + channelName + " :Cannot join channel (+k)\r\n";
-			send(client.getFd(), err.c_str(), err.size(), 0);
-			return;
+			if (info.value.empty() || info.value != channels[channelName].getPwd())
+			{
+				std::string err = ":server 475 " + client.getNickname() + " " + channelName + " :Cannot join channel (+k)\r\n";
+				send(client.getFd(), err.c_str(), err.size(), 0);
+				return;
+			}
 		}
 
 		if (channels[channelName].getMaxUsers() != -1 && 
@@ -480,8 +482,14 @@ void Commands::handleModeCommand(const std::string& msg, Client& client)
 			}
 			else if (info.key == "k")
 			{
-				if (channels[info.channel].getPwd().empty() || !info.status)
+				if (info.status == false)
 					channels[info.channel].setPwd("");
+				else if (info.parameters.empty())
+				{
+					std::string err = ":server 461 " + client.getNickname() + " " + info.channel + " :Not enough parameters\r\n";
+					send(client.getFd(), err.c_str(), err.size(), 0);
+					return;
+				}
 				else
 					channels[info.channel].setPwd(info.parameters);
 				noticeMsg = ":" + client.getNickname() + " MODE " + info.channel + " " + (info.status ? "+k" : "-k") + " " + info.parameters + "\r\n";
@@ -550,7 +558,7 @@ void Commands::handleModeCommand(const std::string& msg, Client& client)
 			}
 			else
 			{
-				std::string err = ":server PRIVMSG " + client.getNickname() + " " + info.key + " :is unknown mode char to me\r\n";
+				std::string err = ":server NOTICE " + client.getNickname() + " " + info.key + " :is unknown mode char to me\r\n";
 				send(client.getFd(), err.c_str(), err.size(), 0);
 				return;
 			}
