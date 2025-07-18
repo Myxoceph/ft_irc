@@ -83,6 +83,8 @@ void Server::run()
 					std::cout << "Client disconnected: fd = " << fds[i].fd << std::endl;
 					removeUser(clients.at(fds[i].fd).getUsername());
 					removeNick(clients.at(fds[i].fd).getNickname());
+					std::string quit = "QUIT\r\n";
+					handleClientMessage(clients.at(fds[i].fd), quit);
 					close(fds[i].fd);
 					fds.erase(fds.begin() + i);
 					--i;
@@ -133,18 +135,27 @@ void Server::initServer(const std::string& port)
 		throw std::runtime_error(RED"Error: socket creation failed " + std::string(strerror(errno)) + RESET);
 
 	opt = 1;
-	if ((setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0) && close(server_fd))
+	if (setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0)
+	{
+		close(server_fd);
 		throw std::runtime_error(RED"Error: setsockopt failed " + std::string(strerror(errno)) + RESET);
+	}
 
 	address.sin_family = AF_INET;
 	address.sin_addr.s_addr = INADDR_ANY;
 	address.sin_port = htons(std::strtol(port.c_str(), NULL, 10));
 
-	if ((bind(server_fd, (struct sockaddr *)&address, sizeof(address)) < 0) && close(server_fd))
+	if (bind(server_fd, (struct sockaddr *)&address, sizeof(address)) < 0)
+	{
+		close(server_fd);	
 		throw std::runtime_error(RED"Error: bind failed " + std::string(strerror(errno)) + RESET);
+	}
 
-	if ((listen(server_fd, 10) < 0) && close(server_fd))
+	if (listen(server_fd, 10) < 0)
+	{
+		close(server_fd);
 		throw std::runtime_error(RED"Error: listen failed " + std::string(strerror(errno)) + RESET);
+	}
 
 	std::cout << BLUE"Server is running on port " << port << RESET << std::endl;
 

@@ -10,7 +10,7 @@ const int Commands::BOT_FD = -1;
 // When someone changes nick on the server, we need to remove the old nick from the nickList
 // /JOIN asd still works, it shouldnt.
 // when sending a message, chatbox doesnt appear.
-// 
+// kicklendikten sonra hala mesaj atabiliyor.
 
 static int ft_atoi(const std::string& str)
 {
@@ -681,7 +681,7 @@ void Commands::handleKickCommand(const std::string& msg, Client& client)
 			return;
 		}
 	}
-	std::string err = "441 " + client.getNickname() + " " + targetNick + " :They aren't on that channel\r\n";
+	std::string err = ":" + client.getNickname() + " NOTICE " + client.getNickname() + " " + targetNick + " is not in that channel\r\n";
 	send(client.getFd(), err.c_str(), err.size(), 0);
 }
 
@@ -730,6 +730,33 @@ void Commands::handleQuitCommand(const std::string& msg, Client& client)
 {
 	std::string quitMsg = ":" + client.getNickname() + " QUIT :" + msg + "\r\n";
 	send(client.getFd(), quitMsg.c_str(), quitMsg.size(), 0);
+	if (!client.getJoinedChannels().empty())
+	{
+		std::vector<std::string> channelsList = client.getJoinedChannels();
+		std::vector<std::string>::iterator it = channelsList.begin();
+		std::vector<std::string>::iterator ite = channelsList.end();
+		while (it != ite)
+		{
+			std::string channelName = *it;
+			if (channels.find(channelName) != channels.end())
+			{
+				std::vector<Client>& users = channels[channelName].getUsers();
+				std::vector<Client>::iterator userIt = users.begin();
+				std::vector<Client>::iterator userIte = users.end();
+				while (userIt != userIte)
+				{
+					if (userIt->getFd() != client.getFd())
+						send(userIt->getFd(), quitMsg.c_str(), quitMsg.size(), 0);
+					userIt++;
+				}
+				channels[channelName].removeUser(client);
+				channels[channelName].removeOp(client.getNickname());
+				if (channels[channelName].getUsers().empty())
+					channels.erase(channelName);
+			}
+			it++;
+		}
+	}
 	client.clearBuffer();
 	clients.erase(client.getFd());
 }
@@ -745,14 +772,14 @@ void Commands::createBot()
 	bot.setRealname("IRC Helper Bot");
 	bot.setHostname("server");
 	bot.setIsAuth(true);
-	
+
 	clients.insert(std::make_pair(BOT_FD, bot));
-	
+
 	std::string botNick = "IrcBot";
 	std::string botUser = "bot";
 	server.addNick(botNick);
 	server.addUser(botUser);
-	
+
 	botExists = true;
 }
 
