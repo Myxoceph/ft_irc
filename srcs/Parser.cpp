@@ -1,125 +1,114 @@
+#include "Parser.hpp"
 #include <iostream>
 #include <string>
 #include <vector>
 
-std::vector<std::string> split(const std::string& str, const std::string& delimiter) {
-    std::vector<std::string> tokens;
-    size_t pos = 0;
-    std::string token;
-    std::string s = str;
+std::vector<std::string> split(const std::string& inputStr) {
+	std::vector<std::string> result;
+	size_t i = 0;
 
-    while ((pos = s.find(delimiter)) != std::string::npos) {
-        token = s.substr(0, pos);
-        tokens.push_back(token);
-        s.erase(0, pos + delimiter.length());
-    }
-    tokens.push_back(s);
-    return tokens;
+	while (i < inputStr.length()) {
+		while (i < inputStr.length() && std::isspace(inputStr[i])) ++i;
+		size_t begin = i;
+		while (i < inputStr.length() && !std::isspace(inputStr[i])) ++i;
+		if (begin < i)
+			result.push_back(inputStr.substr(begin, i - begin));
+	}
+	return result;
 }
 
-std::string trim(const std::string& str) {
-    size_t start = 0;
-    size_t end = str.size() - 1;
+std::string trim(const std::string& raw) {
+	size_t left = 0;
+	while (left < raw.size() && std::isspace(raw[left])) ++left;
 
-    while (start <= end && std::isspace(str[start])) {
-        ++start;
-    }
+	if (left == raw.size())
+		return "";
 
-    while (end >= start && std::isspace(str[end])) {
-        --end;
-    }
+	size_t right = raw.size() - 1;
+	while (right > left && std::isspace(raw[right])) --right;
 
-    return str.substr(start, end - start + 1);
+	return raw.substr(left, right - left + 1);
 }
 
-struct reciveMessage {
-    std::string target;
-    std::string message;
-};
+reciveMessage Parser::privateMessage(std::string rawMsg) {
+	reciveMessage data;
+	std::vector<std::string> parts = split(rawMsg);
 
-reciveMessage privateMessage(std::string message) {
-    reciveMessage info;
-    std::vector<std::string> words = split(message, " ");
-    info.target = words[1];
+	if (parts.size() < 3)
+		return data;
 
-    if (words[2][0] == ':') {
-        words[2].erase(0, 1);
-    }
-    for (size_t i = 2; i < words.size(); i++) {
-        info.message += trim(words[i]);
-        if (i != words.size() - 1) {
-            info.message += " ";
-        }
-    }
-    return info;
+	data.target = parts[1];
+
+	if (!parts[2].empty() && parts[2][0] == ':')
+		parts[2].erase(0, 1);
+
+	for (size_t i = 2; i < parts.size(); i++) {
+		data.message += trim(parts[i]);
+		if (i + 1 < parts.size()) {
+			data.message += " ";
+		}
+	}
+	return data;
 }
 
-struct parseInfo {
-    std::string command;
-    std::string function;
-    std::string value;
-};
+parseInfo Parser::parse(std::string rawInput) {
+	parseInfo parsed;
 
-parseInfo parse(std::string message) {
-    parseInfo info;
+	std::vector<std::string> segments = split(rawInput);
+	if (segments.empty()) {
+		parsed.command = rawInput;
+		return parsed;
+	}
+	
+	parsed.command = trim(segments[0]);
 
-    if (message.find(" ") == std::string::npos) {
-        info.command = message;
-        return info;
-    }
-    std::vector<std::string> words = split(message, " ");
-    info.command = trim(words[0]);
-    if (words.size() == 1) {
-        return info;
-    }
-    info.function = trim(words[1]);
-    if (words.size() == 2) {
-        return info;
-    }
-    for (size_t i = 2; i < words.size(); i++) {
-        info.value += trim(words[i]);
-        if (i != words.size() - 1) {
-            info.value += " ";
-        }
-    }
-    return info;
+	if (segments.size() > 1) {
+		parsed.function = trim(segments[1]);
+	}
+	
+	for (size_t i = 2; i < segments.size(); i++) {
+		parsed.value += trim(segments[i]);
+		if (i + 1 < segments.size()) {
+			parsed.value += " ";
+		}
+	}
+	return parsed;
 }
 
-struct userInfo {
-    std::string userName;
-    std::string realName;
-};
+userInfo Parser::userParse(std::string rawUserInput) {
+	userInfo result;
+	std::vector<std::string> fields = split(rawUserInput);
 
-userInfo userParse(std::string message) {
-    userInfo user;
-    std::vector<std::string> words = split(message, " ");
-    user.userName = words[1];
-    user.realName = words[4].replace(0, 1, "");
-    return user;
+	if (fields.size() < 5 || fields[4].empty() || fields[4][0] != ':')
+		return result;
+
+	result.userName = fields[1];
+	result.realName = fields[4].substr(1);
+	return result;
 }
 
-struct modeInfo {
-    std::string channel;
-    bool status;
-    char key;
-    std::string parameters;
-};
+modeInfo Parser::modeParse(std::string modeLine)
+{
+	modeInfo inf;
+	std::vector<std::string> args = split(modeLine);
 
-modeInfo modeParse(std::string message) {
-    modeInfo info;
-    std::vector<std::string> words = split(message, " ");
-    info.channel = trim(words[1]);
-    info.status = words[2][0] == '+';
-    info.key = words[2][1];
-    if (words.size() == 3) {
-        return info;
-    }
-    info.parameters = trim(words[3]);
-    if (words.size() == 4) {
-        return info;
-    }
-    if (words.size() == 5) {
-        info.parameters += trim(words[4]);
-    }
-    return info;
+	if (args.size() == 2){
+		inf.channel = trim(args[1]);
+		return inf;
+	}
+
+	if (args.size() < 3)
+		return inf;
+
+	inf.channel = trim(args[1]);
+	inf.status = (args[2][0] == '+');
+	inf.key = (args[2].size() > 1) ? args[2][1] : '\0';
+	
+	if (args.size() == 4) {
+		inf.parameters = trim(args[3]);
+	}
+	if (args.size() == 5) {
+		inf.parameters += trim(args[4]);
+	}
+	return inf;
 }
