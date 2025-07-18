@@ -7,11 +7,6 @@
 
 const int Commands::BOT_FD = -1;
 
-// When someone changes nick on the server, we need to remove the old nick from the nickList
-// /JOIN asd still works, it shouldnt.
-// when sending a message, chatbox doesnt appear.
-// kicklendikten sonra hala mesaj atabiliyor.
-
 static int ft_atoi(const std::string& str)
 {
 	std::stringstream ss(str);
@@ -188,6 +183,7 @@ void Commands::handleNickCommand(const std::string& nick, Client& client)
 	}
 
 	std::string oldNickname = client.getNickname();
+	client.setNickname(newNickname);
 	std::string msg = ":" + oldNickname + " NICK :" + newNickname + "\r\n";
 	send(client.getFd(), msg.c_str(), msg.size(), 0);
 	
@@ -211,11 +207,12 @@ void Commands::handleNickCommand(const std::string& nick, Client& client)
 				channels[channelName].removeOp(oldNickname);
 				channels[channelName].addOp(newNickname);
 			}
+			channels[channelName].removeUser(client);
+			channels[channelName].addUser(client);
 		}
 	}
-	
 	server.removeNick(oldNickname);
-	client.setNickname(newNickname);
+	server.addNick(newNickname);
 }
 
 bool Commands::isOP(const std::string& channelName, const Client& client)
@@ -234,6 +231,13 @@ void Commands::handleJoin(const std::string& raw, Client& client)
 {
 	parseInfo info = Parser::parse(raw);
 	std::string channelName = info.function;
+
+	if (channelName.empty() || channelName[0] != '#')
+	{
+		std::string err = ":server 403 " + client.getNickname() + " " + channelName + " :No such channel\r\n";
+		send(client.getFd(), err.c_str(), err.size(), 0);
+		return;
+	}
 	
 	bool channelCreated = false;
 	if (channels.find(channelName) == channels.end())
@@ -573,18 +577,21 @@ void Commands::handlePrivmsg(const std::string& message, Client& sender)
 		return;
 	}
 
-	for (std::map<int, Client>::iterator it = clients.begin(); it != clients.end(); ++it)
+	if (info.target[0] != '#')
 	{
-		if (it->second.getNickname() == info.target)
+		for (std::map<int, Client>::iterator it = clients.begin(); it != clients.end(); ++it)
 		{
-			std::string msg = ":" + sender.getNickname() + " PRIVMSG " + info.target + " :" + info.message + "\r\n";
-			send(it->first, msg.c_str(), msg.size(), 0);
-			return;
+			if (it->second.getNickname() == info.target)
+			{
+				std::string msg = ":" + sender.getNickname() + " PRIVMSG " + info.target + " :" + info.message + "\r\n";
+				send(it->first, msg.c_str(), msg.size(), 0);
+				return;
+			}
 		}
 	}
 
 	std::map<std::string, Channel>::iterator it = channels.find(info.target);
-	if (it != channels.end())
+	if (it != channels.end() && it->second.isUserInChannel(sender.getNickname()))
 	{
 		std::vector<Client>& users = it->second.getUsers();
 		std::string msg = ":" + sender.getNickname() + "!" + sender.getUsername() + "@" + sender.getHostname() + " PRIVMSG " + info.target + " :" + info.message + "\r\n";
@@ -757,6 +764,8 @@ void Commands::handleQuitCommand(const std::string& msg, Client& client)
 			it++;
 		}
 	}
+	server.removeNick(client.getNickname());
+	server.removeUser(client.getUsername());
 	client.clearBuffer();
 	clients.erase(client.getFd());
 }
