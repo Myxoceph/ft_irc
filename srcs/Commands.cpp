@@ -609,10 +609,8 @@ void Commands::handlePrivmsg(const std::string& message, Client& sender)
 		std::vector<Client>& users = it->second.getUsers();
 		std::string msg = ":" + sender.getNickname() + "!" + sender.getUsername() + "@" + sender.getHostname() + " PRIVMSG " + info.target + " :" + info.message + "\r\n";
 		for (std::vector<Client>::iterator user = users.begin(); user != users.end(); ++user)
-		{
 			if (user->getFd() != sender.getFd())
 				send(user->getFd(), msg.c_str(), msg.size(), 0);
-		}
 		return;
 	}
 
@@ -818,31 +816,23 @@ void Commands::botJoinChannel(const std::string& channelName)
 
 	if (channels.find(channelName) != channels.end())
 	{
-
 		std::vector<Client>& users = channels[channelName].getUsers();
 		for (std::vector<Client>::iterator it = users.begin(); it != users.end(); ++it)
-		{
 			if (it->getFd() == BOT_FD)
 				return;
-		}
-		
 		channels[channelName].addUser(bot);
 		channels[channelName].addOp("IrcBot");
 		bot.joinChannel(channelName);
 		
 		std::string joinMsg = ":IrcBot!bot@server JOIN :" + channelName + "\r\n";
 		for (std::vector<Client>::iterator it = users.begin(); it != users.end(); ++it)
-		{
 			if (it->getFd() != BOT_FD && it->getFd() != -1)
 				send(it->getFd(), joinMsg.c_str(), joinMsg.length(), 0);
-		}
 		
 		std::string modeMsg = ":IrcBot MODE " + channelName + " +o IrcBot\r\n";
 		for (std::vector<Client>::iterator it = users.begin(); it != users.end(); ++it)
-		{
 			if (it->getFd() != BOT_FD && it->getFd() != -1)
 				send(it->getFd(), modeMsg.c_str(), modeMsg.length(), 0);
-		}
 	}
 }
 
@@ -858,10 +848,8 @@ void Commands::botGreetUser(const std::string& channelName, const std::string& n
 		{
 			std::string greetMsg = ":IrcBot!bot@server PRIVMSG " + channelName + " :Welcome to " + channelName + ", " + nickname + "!\r\n";
 			for (std::vector<Client>::iterator userIt = users.begin(); userIt != users.end(); ++userIt)
-			{
 				if (userIt->getFd() != BOT_FD && userIt->getFd() != -1)
 					send(userIt->getFd(), greetMsg.c_str(), greetMsg.length(), 0);
-			}
 			break;
 		}
 	}
