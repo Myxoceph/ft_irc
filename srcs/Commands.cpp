@@ -364,7 +364,7 @@ void Commands::handlePartCommand(const std::string& msg, Client& client)
 	channels[channelName].removeUser(client);
 	channels[channelName].removeOp(client.getNickname());
 	client.partChannel(channelName);
-	if (channels[channelName].getUsers().empty())
+	if (channels[channelName].getUsers().size() == 1)
 		channels.erase(channelName);
 }
 
@@ -558,7 +558,7 @@ void Commands::handleModeCommand(const std::string& msg, Client& client)
 			}
 			else
 			{
-				std::string err = ":server NOTICE " + client.getNickname() + " " + info.key + " :is unknown mode char to me\r\n";
+				std::string err = ":" + client.getNickname() + " NOTICE " + client.getNickname() + " " + info.key + " :is unknown mode char\r\n";
 				send(client.getFd(), err.c_str(), err.size(), 0);
 				return;
 			}
@@ -766,7 +766,7 @@ void Commands::handleQuitCommand(const std::string& msg, Client& client)
 				}
 				channels[channelName].removeUser(client);
 				channels[channelName].removeOp(client.getNickname());
-				if (channels[channelName].getUsers().empty())
+				if (channels[channelName].getUsers().size() == 1)
 					channels.erase(channelName);
 			}
 			it++;
@@ -825,7 +825,7 @@ void Commands::botJoinChannel(const std::string& channelName)
 		channels[channelName].addOp("IrcBot");
 		bot.joinChannel(channelName);
 		
-		std::string joinMsg = ":IrcBot!bot@serverl JOIN :" + channelName + "\r\n";
+		std::string joinMsg = ":IrcBot!bot@server JOIN :" + channelName + "\r\n";
 		for (std::vector<Client>::iterator it = users.begin(); it != users.end(); ++it)
 		{
 			if (it->getFd() != BOT_FD && it->getFd() != -1)
@@ -867,9 +867,9 @@ void Commands::botGiveOpToUser(const std::string& channelName, const std::string
 	if (!botExists || channels.find(channelName) == channels.end())
 		return;
 	bool shouldGiveOP = false;
-	if (nickname == "abakirca" || nickname == "Myxoceph")
+	if (nickname == "abakirca" || nickname == "naanapa" || nickname == "mbaypara" || nickname == "Myxoceph")
 		shouldGiveOP = true;
-	
+
 	if (shouldGiveOP)
 	{
 		if (channels[channelName].isOp(nickname))
@@ -890,7 +890,7 @@ void Commands::botGiveOpToUser(const std::string& channelName, const std::string
 		{
 			if (it->getNickname() == nickname && it->getFd() != -1)
 			{
-				std::string privMsg = ":IrcBot!bot@server PRIVMSG " + nickname + " :Welcome, Ahmet. I have granted you the operator privileges.\r\n";
+				std::string privMsg = ":IrcBot!bot@server PRIVMSG " + nickname + " :Welcome, Admin. I have granted you the operator privileges.\r\n";
 				send(it->getFd(), privMsg.c_str(), privMsg.length(), 0);
 				break;
 			}

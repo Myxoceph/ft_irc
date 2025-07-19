@@ -5,6 +5,7 @@ Client::Client(const int& fd)
 {
 	this->fd = fd;
 	this->isAuth = false;
+	this->hostname = "server";
 }
 
 Client::~Client()
