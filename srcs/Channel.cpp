@@ -80,7 +80,7 @@ std::string Channel::getPwd() const
 void Channel::addUser(const Client& user)
 {
 	for (std::vector<Client>::iterator it = users.begin(); it != users.end(); ++it)
-		if (it->getNickname() == user.getNickname())
+		if (it->getFd() == user.getFd())
 			return;
 	users.push_back(user);
 }
@@ -92,7 +92,7 @@ void Channel::removeUser(const Client& user)
 	std::vector<Client>::iterator ite = users.end();
 	while (it != ite)
 	{
-		if (it->getNickname() == user.getNickname())
+		if (it->getFd() == user.getFd())
 		{
 			users.erase(it);
 			return;

@@ -183,7 +183,6 @@ void Commands::handleNickCommand(const std::string& nick, Client& client)
 	}
 
 	std::string oldNickname = client.getNickname();
-	client.setNickname(newNickname);
 	std::string msg = ":" + oldNickname + " NICK :" + newNickname + "\r\n";
 	send(client.getFd(), msg.c_str(), msg.size(), 0);
 	
@@ -208,8 +207,14 @@ void Commands::handleNickCommand(const std::string& nick, Client& client)
 				channels[channelName].addOp(newNickname);
 			}
 			channels[channelName].removeUser(client);
-			channels[channelName].addUser(client);
 		}
+	}
+	client.setNickname(newNickname);
+	for (std::vector<std::string>::iterator it = channelsList.begin(); it != channelsList.end(); ++it)
+	{
+		std::string channelName = *it;
+		if (channels.find(channelName) != channels.end())
+			channels[channelName].addUser(client);
 	}
 	server.removeNick(oldNickname);
 	server.addNick(newNickname);
@@ -289,7 +294,7 @@ void Commands::handleJoin(const std::string& raw, Client& client)
 		
 		for (it = users.begin(); it != users.end(); ++it)
 		{
-			if (it->getNickname() == client.getNickname())
+			if (it->getFd() == client.getFd())
 			{
 				std::string err = ":server 443 " + client.getNickname() + " " + channelName + " :is already on channel\r\n";
 				send(client.getFd(), err.c_str(), err.size(), 0);
@@ -301,7 +306,7 @@ void Commands::handleJoin(const std::string& raw, Client& client)
 	channels[channelName].addUser(client);
 	client.joinChannel(channelName);
 
-	std::string joinMsg = ":" + client.getNickname() + "!" + client.getUsername() + client.getHostname() + " JOIN :" + channelName + "\r\n";
+	std::string joinMsg = ":" + client.getNickname() + "!" + client.getUsername() + "@" + client.getHostname() + " JOIN :" + channelName + "\r\n";
 	for (std::vector<Client>::iterator it = channels[channelName].getUsers().begin(); it != channels[channelName].getUsers().end(); ++it)
 		send(it->getFd(), joinMsg.c_str(), joinMsg.length(), 0);
 
