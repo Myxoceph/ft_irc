@@ -67,7 +67,14 @@ void Server::run()
 				while ((n = read(fds[i].fd, buffer, sizeof(buffer) - 1)) > 0)
 				{
 					buffer[n] = '\0';
-					Client& client = clients.at(fds[i].fd);
+					std::map<int, Client>::iterator it = clients.find(fds[i].fd);
+					if (it == clients.end())
+					{
+						std::cerr << "Error: Client not found for fd " << fds[i].fd << std::endl;
+						break;
+					}
+					
+					Client& client = it->second;
 					client.appendToBuffer(buffer);
 					client.setPwd(pwd);
 
@@ -81,10 +88,16 @@ void Server::run()
 				if (n == 0)
 				{
 					std::cout << "Client disconnected: fd = " << fds[i].fd << std::endl;
-					removeUser(clients.at(fds[i].fd).getUsername());
-					removeNick(clients.at(fds[i].fd).getNickname());
-					std::string quit = "QUIT\r\n";
-					handleClientMessage(clients.at(fds[i].fd), quit);
+					std::map<int, Client>::iterator it = clients.find(fds[i].fd);
+					if (it != clients.end())
+					{
+						removeUser(it->second.getUsername());
+						removeNick(it->second.getNickname());
+						std::string quit = "QUIT\r\n";
+						handleClientMessage(it->second, quit);
+						clients.erase(it);
+					}
+					
 					close(fds[i].fd);
 					fds.erase(fds.begin() + i);
 					--i;
