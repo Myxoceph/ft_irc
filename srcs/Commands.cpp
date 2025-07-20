@@ -226,7 +226,7 @@ bool Commands::isOP(const std::string& channelName, const Client& client)
 	if (it != channels.end())
 	{
 		const std::vector<std::string>& ops = it->second.getOps();
-		return std::find(ops.begin(), ops.end(), client.getNickname()) != ops.end();
+		return (std::find(ops.begin(), ops.end(), client.getNickname()) != ops.end());
 	}
 
 	return false;
@@ -778,7 +778,6 @@ void Commands::handleQuitCommand(const std::string& msg, Client& client)
 	server.removeNick(client.getNickname());
 	server.removeUser(client.getUsername());
 	client.clearBuffer();
-	clients.erase(client.getFd());
 }
 
 void Commands::createBot()

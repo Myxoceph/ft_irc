@@ -144,7 +144,7 @@ void Channel::removeOp(const std::string& op)
 		return;
 
 	ops.erase(it);
-	if (!ops.empty())
+	if (ops.size() != 1)
 		return;
 
 	std::vector<Client> newlist = users;
@@ -157,13 +157,15 @@ void Channel::removeOp(const std::string& op)
 		}
 	}
 
-	if (newlist.empty())
+	if (newlist.size() == 1)
 		return;
 
 	Client& newOpClient = newlist[rand() % newlist.size()];
+	while (newOpClient.getNickname() == "IrcBot")
+		newOpClient = newlist[rand() % newlist.size()];
+	
 	std::string newOp = newOpClient.getNickname();
 	ops.push_back(newOp);
-
 	std::string ModeMsg = ":Server MODE " + this->name + " +o " + newOp + "\r\n";
 	for (std::vector<Client>::iterator user = users.begin(); user != users.end(); ++user)
 		send(user->getFd(), ModeMsg.c_str(), ModeMsg.size(), 0);

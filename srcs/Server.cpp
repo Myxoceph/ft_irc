@@ -11,7 +11,8 @@ Server::Server(const std::string& port, const std::string& pwd)
 Server::~Server()
 {
 	for (std::map<int, Client>::const_iterator it = clients.begin(); it != clients.end(); ++it)
-		close(it->first);
+		if (it->first != -1)
+			close(it->first);
 	close(server_fd);
 	clients.clear();
 	fds.clear();
@@ -52,7 +53,8 @@ void Server::run()
 			if (fds[i].revents & (POLLHUP | POLLERR))
 			{
 				std::cout << "Client error/disconnect: fd = " << fds[i].fd << std::endl;
-				close(fds[i].fd);
+				if (fds[i].fd != -1)
+					close(fds[i].fd);
 				fds.erase(fds.begin() + i);
 				--i;
 				ready--;
@@ -97,8 +99,8 @@ void Server::run()
 						handleClientMessage(it->second, quit);
 						clients.erase(it);
 					}
-					
-					close(fds[i].fd);
+					if (fds[i].fd != -1)
+						close(fds[i].fd);
 					fds.erase(fds.begin() + i);
 					--i;
 				}
