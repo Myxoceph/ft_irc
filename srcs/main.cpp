@@ -16,6 +16,7 @@ int main(int ac, char **av)
 		signal(SIGINT, handleSignals);
 		signal(SIGTERM, handleSignals);
 		signal(SIGQUIT, handleSignals);
+		signal(SIGPIPE, SIG_IGN);
 		Server server(av[1], av[2]);
 		server.run();
 		return (0);

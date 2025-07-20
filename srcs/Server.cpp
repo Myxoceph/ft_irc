@@ -53,6 +53,15 @@ void Server::run()
 			if (fds[i].revents & (POLLHUP | POLLERR))
 			{
 				std::cout << "Client error/disconnect: fd = " << fds[i].fd << std::endl;
+				std::map<int, Client>::iterator it = clients.find(fds[i].fd);
+				if (it != clients.end())
+				{
+					removeUser(it->second.getUsername());
+					removeNick(it->second.getNickname());
+					std::string quit = "QUIT\r\n";
+					handleClientMessage(it->second, quit);
+					clients.erase(it);
+				}
 				if (fds[i].fd != -1)
 					close(fds[i].fd);
 				fds.erase(fds.begin() + i);
