@@ -505,6 +505,12 @@ void Commands::handleModeCommand(const std::string& msg, Client& client)
 				int maxUsers = -1;
 				if (!info.status)
 					channels[info.channel].setMaxUsers(maxUsers);
+				else if (info.parameters.empty())
+				{
+					std::string err = ":server 461 " + client.getNickname() + " " + info.channel + " :Not enough parameters\r\n";
+					send(client.getFd(), err.c_str(), err.size(), 0);
+					return;
+				}
 				else
 				{
 					maxUsers = ft_atoi(info.parameters);
@@ -747,7 +753,9 @@ void Commands::handleInviteCommand(const std::string& msg, Client& client)
 
 void Commands::handleQuitCommand(const std::string& msg, Client& client)
 {
-	std::string quitMsg = ":" + client.getNickname() + " QUIT :" + msg + "\r\n";
+	std::string shapedMsg = msg;
+	shapedMsg.erase(0, 6);
+	std::string quitMsg = ":" + client.getNickname() + " QUIT :" + shapedMsg + "\r\n";
 	send(client.getFd(), quitMsg.c_str(), quitMsg.size(), 0);
 	if (!client.getJoinedChannels().empty())
 	{

@@ -12,7 +12,7 @@ fi
 SERVER_PASSWORD="$1"
 SERVER="localhost"
 PORT="6667"
-CHANNEL="#test"
+CHANNEL="#evo"
 
 # JoJo Stand Users and behaviors
 declare -A NPC_NAMES=([1]="Jotaro" [2]="Dio" [3]="Giorno" [4]="Josuke" [5]="Jonathan")
