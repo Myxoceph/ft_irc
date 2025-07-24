@@ -55,17 +55,6 @@ class Server
 			bool addNick(std::string& nick);
 			
 			void removeNick(std::string nick);
-
-			struct PollFdMatch
-			{
-				int fdToRemove;
-				PollFdMatch(int fd) : fdToRemove(fd) {}
-			
-				bool operator()(const struct pollfd& pfd) const
-				{
-					return pfd.fd == fdToRemove;
-				}
-			};
 };
 
 #endif
