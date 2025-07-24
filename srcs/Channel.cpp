@@ -9,7 +9,7 @@ Channel::Channel()
 	this->invOnly = false;
 	this->maxUsers = -1;
 	this->topic = "The topic has not been set yet.";
-	this->topicSet = false;
+	this->topicSet = true;
 }
 
 Channel::Channel(const std::string& name)
@@ -19,7 +19,7 @@ Channel::Channel(const std::string& name)
 	this->invOnly = false;
 	this->maxUsers = -1;
 	this->topic = "The topic has not been set yet.";
-	this->topicSet = false;
+	this->topicSet = true;
 }
 
 Channel::~Channel()

@@ -4,14 +4,20 @@
 #include <sstream>
 #include <sys/socket.h>
 #include <ctime>
+#include <limits>
 
 const int Commands::BOT_FD = -1;
 
 static int ft_atoi(const std::string& str)
 {
+	if (str.size() > 11)
+		return -2;
 	std::stringstream ss(str);
-	int num;
+	long num;
 	ss >> num;
+	if (num < static_cast<long>(std::numeric_limits<int>::min()) || num > static_cast<long>(std::numeric_limits<int>::max()))
+		return -2;
+
 	return num;
 }
 
@@ -80,7 +86,7 @@ void Commands::executeCommand(const std::string& raw, Client& client)
 		(this->*(it->second))(raw, client);
 	else
 	{
-		std::string err = ":server 421 " + client.getNickname() + " " + cmd + " :Unknown command\r\n";
+		std::string err = ":server NOTICE " + client.getNickname() + " " + cmd + " :Unknown command\r\n";
 		send(client.getFd(), err.c_str(), err.size(), 0);
 	}
 }
@@ -252,13 +258,6 @@ void Commands::handleJoin(const std::string& raw, Client& client)
 				send(client.getFd(), err.c_str(), err.size(), 0);
 				return;
 			}
-			else
-			{
-				std::vector<std::string>& invited = channels[channelName].getInvitedUsers();
-				std::vector<std::string>::iterator toDel = std::find(invited.begin(), invited.end(), client.getNickname());
-				if (toDel != invited.end())
-					invited.erase(toDel);
-			}
 		}
 		if (channels[channelName].getPwd() != "")
 		{
@@ -332,6 +331,10 @@ void Commands::handleJoin(const std::string& raw, Client& client)
 
 	botGreetUser(channelName, client.getNickname());
 	botGiveOpToUser(channelName, client.getNickname());
+	std::vector<std::string>& invited = channels[channelName].getInvitedUsers();
+	std::vector<std::string>::iterator toDel = std::find(invited.begin(), invited.end(), client.getNickname());
+	if (toDel != invited.end())
+		invited.erase(toDel);
 }
 
 void Commands::handlePartCommand(const std::string& msg, Client& client)
@@ -428,6 +431,18 @@ void Commands::handleTopicCommand(const std::string& msg, Client& client)
 void Commands::handleModeCommand(const std::string& msg, Client& client)
 {
 	modeInfo info = Parser::modeParse(msg);
+	if (info.channel.empty())
+	{
+		std::string err = ":server 461 " + client.getNickname() + " MODE :Not enough parameters\r\n";
+		send(client.getFd(), err.c_str(), err.size(), 0);
+		return;
+	}
+	if (info.channel[0] != '#')
+	{
+		std::string err = ":server 403 " + client.getNickname() + " " + info.channel + " :No such channel\r\n";
+		send(client.getFd(), err.c_str(), err.size(), 0);
+		return;
+	}
 	if (info.key.empty())
 	{
 		std::string modes = "";
@@ -437,7 +452,7 @@ void Commands::handleModeCommand(const std::string& msg, Client& client)
 			modes += "k";
 		if (channels[info.channel].getMaxUsers() != -1)
 			modes += "l";
-		if (channels[info.channel].getTopicSet())
+		if (!channels[info.channel].getTopicSet())
 			modes += "t";
 		if (modes.empty())
 		{
@@ -502,6 +517,12 @@ void Commands::handleModeCommand(const std::string& msg, Client& client)
 				else
 				{
 					maxUsers = ft_atoi(info.parameters);
+					if (maxUsers < 0)
+					{
+						std::string err = ":server 501 " + client.getNickname() + " " + info.channel + " :Invalid parameter\r\n";
+						send(client.getFd(), err.c_str(), err.size(), 0);
+						return;
+					}
 					channels[info.channel].setMaxUsers(maxUsers);
 				}
 				noticeMsg = ":" + client.getNickname() + " MODE " + info.channel + " " + (info.status ? "+l" : "-l") + " " + (maxUsers == -1 ? "" : ft_itoa(maxUsers)) + "\r\n";
@@ -550,9 +571,9 @@ void Commands::handleModeCommand(const std::string& msg, Client& client)
 			else if (info.key == "t")
 			{
 				if (info.status)
-					channels[info.channel].setTopicSet(true);
-				else
 					channels[info.channel].setTopicSet(false);
+				else
+					channels[info.channel].setTopicSet(true);
 
 				noticeMsg = ":" + client.getNickname() + " MODE " + info.channel + " " + (info.status ? "+t" : "-t") + "\r\n";
 			}

@@ -129,6 +129,14 @@ modeInfo Parser::modeParse(std::string message)
 	modeInfo info;
 
 	std::vector<std::string> words = split(message);
+	if (words.size() < 2)
+	{
+		info.channel = "";
+		info.status = false;
+		info.key = "";
+		info.parameters = "";
+		return info;
+	}
 	if (words.size() == 2)
 	{
 		info.channel = trim(words[1]);
