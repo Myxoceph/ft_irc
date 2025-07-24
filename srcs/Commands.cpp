@@ -168,10 +168,15 @@ void Commands::handleNickCommand(const std::string& nick, Client& client)
 	}
 	if (server.addNick(cmd) == false)
 	{
-		std::string err = ":server 433 " + cmd + " :Nickname is already in use\r\n";
-		if (client.getNickname() == "")
-			client.setNickname(cmd);
+		std::string err = ":server 433 " + cmd + " :" + cmd + " is already in use\r\n";
 		send(client.getFd(), err.c_str(), err.size(), 0);
+		return;
+	}
+	if (client.getNickname().empty())
+	{
+		std::string noticeMsg = ":Server 001 " + cmd + "\r\n";
+		send(client.getFd(), noticeMsg.c_str(), noticeMsg.size(), 0);
+		client.setNickname(cmd);
 		return;
 	}
 
