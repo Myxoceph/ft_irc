@@ -56,7 +56,6 @@ void Server::run()
 				std::map<int, Client>::iterator it = clients.find(fds[i].fd);
 				if (it != clients.end())
 				{
-					removeUser(it->second.getUsername());
 					removeNick(it->second.getNickname());
 					std::string quit = "QUIT\r\n";
 					handleClientMessage(it->second, quit);
@@ -102,7 +101,6 @@ void Server::run()
 					std::map<int, Client>::iterator it = clients.find(fds[i].fd);
 					if (it != clients.end())
 					{
-						removeUser(it->second.getUsername());
 						removeNick(it->second.getNickname());
 						std::string quit = "QUIT\r\n";
 						handleClientMessage(it->second, quit);
@@ -189,15 +187,6 @@ void Server::initServer(const std::string& port)
 	fds.push_back(server_pollfd);
 }
 
-bool Server::addUser(std::string& user)
-{
-	if (std::find(userList.begin(), userList.end(), user) != userList.end())
-		return false;
-
-	userList.push_back(user);
-	return true;
-}
-
 bool Server::addNick(std::string& nick)
 {
 	if (std::find(nickList.begin(), nickList.end(), nick) != nickList.end())
@@ -205,13 +194,6 @@ bool Server::addNick(std::string& nick)
 
 	nickList.push_back(nick);
 	return true;
-}
-
-void Server::removeUser(std::string user)
-{
-	std::vector<std::string>::iterator it = std::find(userList.begin(), userList.end(), user);
-	if (it != userList.end())
-		userList.erase(it);
 }
 
 void Server::removeNick(std::string nick)

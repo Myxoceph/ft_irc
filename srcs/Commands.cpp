@@ -132,16 +132,7 @@ void Commands::handleUserCommand(const std::string& msg, Client& client)
 		return;
 	}
 
-	if (server.addUser(info.userName) == false)
-	{
-		std::string err = "Username already exists. Please choose a different username.\r\n";
-		send(client.getFd(), err.c_str(), err.size(), 0);
-		return;
-	}	
-
 	std::string oldUsername = client.getUsername();
-	if (!oldUsername.empty())
-		server.removeUser(oldUsername);
 	
 	client.setUsername(info.userName);
 	client.setRealname(info.realName);
@@ -177,7 +168,9 @@ void Commands::handleNickCommand(const std::string& nick, Client& client)
 	}
 	if (server.addNick(newNickname) == false)
 	{
-		std::string err = "Nickname already exists. Please choose a different nickname.\r\n";
+		std::string err = ":server 433 " + newNickname + " :Nickname is already in use\r\n";
+		if (client.getNickname() == "")
+			client.setNickname(newNickname);
 		send(client.getFd(), err.c_str(), err.size(), 0);
 		return;
 	}
@@ -785,7 +778,6 @@ void Commands::handleQuitCommand(const std::string& msg, Client& client)
 		}
 	}
 	server.removeNick(client.getNickname());
-	server.removeUser(client.getUsername());
 	client.clearBuffer();
 }
 
@@ -806,7 +798,6 @@ void Commands::createBot()
 	std::string botNick = "IrcBot";
 	std::string botUser = "bot";
 	server.addNick(botNick);
-	server.addUser(botUser);
 
 	botExists = true;
 }
