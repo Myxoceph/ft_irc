@@ -254,9 +254,10 @@ void Commands::handleJoin(const std::string& raw, Client& client)
 			}
 			else
 			{
-				std::vector<std::string>::iterator toDel = std::find(channels[channelName].getInvitedUsers().begin(), channels[channelName].getInvitedUsers().end(), client.getNickname());
-				if (toDel != channels[channelName].getInvitedUsers().end())
-					channels[channelName].getInvitedUsers().erase(toDel);
+				std::vector<std::string>& invited = channels[channelName].getInvitedUsers();
+				std::vector<std::string>::iterator toDel = std::find(invited.begin(), invited.end(), client.getNickname());
+				if (toDel != invited.end())
+					invited.erase(toDel);
 			}
 		}
 		if (channels[channelName].getPwd() != "")

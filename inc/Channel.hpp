@@ -41,7 +41,7 @@ class Channel
 			int			getMaxUsers() const;
 			std::vector<std::string> &getOps();
 			std::string getTopic() const;
-			std::vector<std::string> getInvitedUsers() const;
+			std::vector<std::string>& getInvitedUsers();
 			std::vector<Client>& getUsers();
 			
 			void addinvitedUser(const std::string& user);

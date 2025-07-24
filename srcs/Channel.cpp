@@ -121,7 +121,7 @@ void Channel::setTopic(const std::string& topic)
 	this->topic = topic;
 }
 
-std::vector<std::string> Channel::getInvitedUsers() const
+std::vector<std::string>& Channel::getInvitedUsers()
 {
 	return (this->invitedUsers);
 }
