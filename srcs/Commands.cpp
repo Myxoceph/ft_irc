@@ -146,7 +146,6 @@ void Commands::handleNickCommand(const std::string& nick, Client& client)
 {
 	parseInfo info = Parser::parse(nick);
 	std::string cmd = info.function;
-	std::string newNickname;
 
 	if (cmd.empty())
 	{
@@ -155,28 +154,23 @@ void Commands::handleNickCommand(const std::string& nick, Client& client)
 		return;
 	}
 
-	if (info.value.empty())
-		newNickname = cmd;
-	else
-		newNickname = cmd + " " + info.value;
-
-	if (newNickname == "IrcBot")
+	if (cmd == "IrcBot")
 	{
 		std::string err = "Nickname 'IrcBot' is reserved for the server bot\r\n";
 		send(client.getFd(), err.c_str(), err.size(), 0);
 		return;
 	}
-	if (server.addNick(newNickname) == false)
+	if (server.addNick(cmd) == false)
 	{
-		std::string err = ":server 433 " + newNickname + " :Nickname is already in use\r\n";
+		std::string err = ":server 433 " + cmd + " :Nickname is already in use\r\n";
 		if (client.getNickname() == "")
-			client.setNickname(newNickname);
+			client.setNickname(cmd);
 		send(client.getFd(), err.c_str(), err.size(), 0);
 		return;
 	}
 
 	std::string oldNickname = client.getNickname();
-	std::string msg = ":" + oldNickname + " NICK :" + newNickname + "\r\n";
+	std::string msg = ":" + oldNickname + " NICK :" + cmd + "\r\n";
 	send(client.getFd(), msg.c_str(), msg.size(), 0);
 	
 	std::vector<std::string> channelsList = client.getJoinedChannels();
@@ -190,19 +184,19 @@ void Commands::handleNickCommand(const std::string& nick, Client& client)
 			{
 				if (userIt->getFd() != client.getFd())
 				{
-					std::string msgToUser = ":" + oldNickname + " NICK :" + newNickname + "\r\n";
+					std::string msgToUser = ":" + oldNickname + " NICK :" + cmd + "\r\n";
 					send(userIt->getFd(), msgToUser.c_str(), msgToUser.size(), 0);
 				}
 			}
 			if (channels[channelName].isOp(oldNickname))
 			{
 				channels[channelName].removeOp(oldNickname);
-				channels[channelName].addOp(newNickname);
+				channels[channelName].addOp(cmd);
 			}
 			channels[channelName].removeUser(client);
 		}
 	}
-	client.setNickname(newNickname);
+	client.setNickname(cmd);
 	for (std::vector<std::string>::iterator it = channelsList.begin(); it != channelsList.end(); ++it)
 	{
 		std::string channelName = *it;
@@ -210,7 +204,7 @@ void Commands::handleNickCommand(const std::string& nick, Client& client)
 			channels[channelName].addUser(client);
 	}
 	server.removeNick(oldNickname);
-	server.addNick(newNickname);
+	server.addNick(cmd);
 }
 
 bool Commands::isOP(const std::string& channelName, const Client& client)
@@ -882,7 +876,7 @@ void Commands::botGiveOpToUser(const std::string& channelName, const std::string
 		{
 			if (it->getNickname() == nickname && it->getFd() != -1)
 			{
-				std::string privMsg = ":IrcBot!bot@server PRIVMSG " + nickname + " :Welcome, Admin. I have granted you the operator privileges.\r\n";
+				std::string privMsg = ":IrcBot!bot@server NOTICE " + nickname + " :Welcome, Admin. I have granted you the operator privileges.\r\n";
 				send(it->getFd(), privMsg.c_str(), privMsg.length(), 0);
 				break;
 			}
